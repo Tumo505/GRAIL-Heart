@@ -1,0 +1,79 @@
+# GRAIL-Heart Configuration
+# Default training configuration
+
+# Model Architecture
+model:
+  hidden_dim: 256
+  n_gat_layers: 3
+  n_heads: 8
+  n_edge_types: 2
+  encoder_dims: [512, 256]
+  dropout: 0.1
+  use_spatial: true
+  use_variational: false
+  tasks:
+    - lr
+    - reconstruction
+
+# Data Configuration
+data:
+  n_top_genes: 2000
+  normalize: true
+  log_transform: true
+  min_cells: 3
+  min_genes: 200
+  graph_method: knn
+  k_neighbors: 6
+  batch_size: 1  # Full graph per batch
+  num_workers: 0
+
+# Training Configuration
+training:
+  n_epochs: 100
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  optimizer: adamw
+  scheduler: cosine
+  warmup_epochs: 5
+  grad_clip: 1.0
+  grad_accum_steps: 1
+  mixed_precision: true
+
+# Loss Weights
+loss:
+  lr_weight: 1.0
+  recon_weight: 0.5
+  cell_type_weight: 1.0
+  signaling_weight: 0.1
+  kl_weight: 0.001
+
+# Early Stopping
+early_stopping:
+  patience: 15
+  monitor: val_total_loss
+  mode: min
+
+# Checkpointing
+checkpoint:
+  save_interval: 5
+  save_best: true
+  save_last: true
+
+# Logging
+logging:
+  log_interval: 10
+  use_tensorboard: true
+  use_wandb: false
+  wandb_project: grail-heart
+
+# Data Paths
+paths:
+  data_dir: data
+  output_dir: outputs
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs
+
+# Hardware
+hardware:
+  device: cuda
+  seed: 42
