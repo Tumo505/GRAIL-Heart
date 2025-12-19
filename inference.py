@@ -257,7 +257,7 @@ class GRAILHeartInference:
                 rec_expr = expression[:, rec_idx]
                 
                 # For each edge, compute L-R score
-                edge_index = graph.edge_index.numpy()
+                edge_index = graph.edge_index.cpu().numpy()
                 
                 # Source cell expresses ligand, target cell expresses receptor
                 lig_src = lig_expr[edge_index[0]]
