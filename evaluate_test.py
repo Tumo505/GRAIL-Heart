@@ -92,6 +92,7 @@ def main():
         use_spatial=model_config.get('use_spatial', True),
         use_variational=model_config.get('use_variational', False),
         tasks=model_config.get('tasks', ['lr', 'reconstruction']),
+        n_lr_pairs=2,  # Match checkpoint
     )
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
