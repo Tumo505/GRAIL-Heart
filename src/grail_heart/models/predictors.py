@@ -336,10 +336,12 @@ class MultiTaskHead(nn.Module):
         n_cell_types: Optional[int] = None,
         n_lr_pairs: Optional[int] = None,
         tasks: List[str] = ['lr', 'reconstruction'],
+        decoder_type: str = 'improved',  # 'basic', 'improved', 'zinb'
     ):
         super().__init__()
         
         self.tasks = tasks
+        self.decoder_type = decoder_type
         
         if 'lr' in tasks:
             self.lr_predictor = LRInteractionPredictor(
@@ -354,10 +356,32 @@ class MultiTaskHead(nn.Module):
             )
             
         if 'reconstruction' in tasks:
-            self.decoder = GeneExpressionDecoder(
-                hidden_dim=hidden_dim,
-                n_genes=n_genes,
-            )
+            if decoder_type == 'residual':
+                from .reconstruction import ResidualGeneDecoder
+                self.decoder = ResidualGeneDecoder(
+                    hidden_dim=hidden_dim,
+                    n_genes=n_genes,
+                    decoder_dims=[512, 512],
+                )
+            elif decoder_type == 'improved':
+                from .reconstruction import ImprovedGeneDecoder
+                self.decoder = ImprovedGeneDecoder(
+                    hidden_dim=hidden_dim,
+                    n_genes=n_genes,
+                    decoder_dims=[512, 1024, 512],
+                    n_residual_blocks=2,
+                )
+            elif decoder_type == 'zinb':
+                from .reconstruction import ZINBDecoder
+                self.decoder = ZINBDecoder(
+                    hidden_dim=hidden_dim,
+                    n_genes=n_genes,
+                )
+            else:
+                self.decoder = GeneExpressionDecoder(
+                    hidden_dim=hidden_dim,
+                    n_genes=n_genes,
+                )
             
         if 'signaling' in tasks:
             self.signaling_predictor = SignalingNetworkPredictor(
@@ -369,6 +393,7 @@ class MultiTaskHead(nn.Module):
         z: torch.Tensor,
         edge_index: Optional[torch.Tensor] = None,
         spatial_dist: Optional[torch.Tensor] = None,
+        x_original: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         Compute all predictions.
@@ -377,6 +402,7 @@ class MultiTaskHead(nn.Module):
             z: Cell embeddings [N, D]
             edge_index: Edge indices for L-R prediction [2, E]
             spatial_dist: Spatial distance matrix [N, N]
+            x_original: Original gene expression for residual decoder [N, n_genes]
             
         Returns:
             Dictionary of predictions
@@ -390,7 +416,16 @@ class MultiTaskHead(nn.Module):
             outputs['cell_type_logits'] = self.cell_type_predictor(z)
             
         if 'reconstruction' in self.tasks:
-            outputs['reconstruction'] = self.decoder(z)
+            if self.decoder_type == 'zinb':
+                zinb_out = self.decoder(z, return_distribution=True)
+                outputs['reconstruction'] = zinb_out['mean']
+                outputs['zinb_theta'] = zinb_out['theta']
+                outputs['zinb_dropout'] = zinb_out['dropout']
+            elif self.decoder_type == 'residual':
+                # Residual decoder needs original input
+                outputs['reconstruction'] = self.decoder(z, x_original)
+            else:
+                outputs['reconstruction'] = self.decoder(z)
             
         if 'signaling' in self.tasks:
             outputs['signaling'] = self.signaling_predictor(z, spatial_dist)

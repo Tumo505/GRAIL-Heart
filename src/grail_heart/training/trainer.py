@@ -189,6 +189,7 @@ class GRAILHeartTrainer:
                 'lr_loss': loss_dict.get('lr_loss', torch.tensor(0)).item(),
                 'recon_loss': loss_dict.get('recon_loss', torch.tensor(0)).item(),
                 'cell_type_loss': loss_dict.get('cell_type_loss', torch.tensor(0)).item(),
+                'contrastive_loss': loss_dict.get('contrastive_loss', torch.tensor(0)).item(),
             }, count=batch_size)
             
             # Logging
@@ -237,6 +238,7 @@ class GRAILHeartTrainer:
                 'total_loss': loss_dict['total_loss'].item(),
                 'lr_loss': loss_dict.get('lr_loss', torch.tensor(0)).item(),
                 'recon_loss': loss_dict.get('recon_loss', torch.tensor(0)).item(),
+                'contrastive_loss': loss_dict.get('contrastive_loss', torch.tensor(0)).item(),
             }, count=batch_size)
             
             # Collect predictions for metric computation
@@ -275,6 +277,10 @@ class GRAILHeartTrainer:
         
         # Expression reconstruction target
         targets['expression'] = data.x
+        
+        # Edge index for contrastive learning
+        if hasattr(data, 'edge_index'):
+            targets['edge_index'] = data.edge_index
         
         # L-R interaction targets
         if hasattr(data, 'edge_type'):

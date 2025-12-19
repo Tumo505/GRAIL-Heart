@@ -80,26 +80,35 @@ class ReconstructionLoss(nn.Module):
     - Poisson: Poisson negative log-likelihood
     - NB: Negative binomial
     - ZINB: Zero-inflated negative binomial
+    - combined: MSE + cosine + correlation
     
     Args:
         loss_type: Type of reconstruction loss
         reduction: Reduction method ('mean', 'sum', 'none')
+        cosine_weight: Weight for cosine loss (combined mode)
+        correlation_weight: Weight for correlation loss (combined mode)
     """
     
     def __init__(
         self,
         loss_type: str = 'mse',
         reduction: str = 'mean',
+        cosine_weight: float = 0.3,
+        correlation_weight: float = 0.3,
     ):
         super().__init__()
         self.loss_type = loss_type
         self.reduction = reduction
+        self.cosine_weight = cosine_weight
+        self.correlation_weight = correlation_weight
         
     def forward(
         self,
         pred: torch.Tensor,
         target: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
+        theta: Optional[torch.Tensor] = None,
+        pi: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Compute reconstruction loss.
@@ -108,6 +117,8 @@ class ReconstructionLoss(nn.Module):
             pred: Predicted expression [N, G]
             target: Ground truth expression [N, G]
             mask: Optional mask for gene subset [N, G] or [G]
+            theta: Dispersion parameter for NB/ZINB [N, G] or [G]
+            pi: Dropout probability for ZINB [N, G]
             
         Returns:
             Loss value
@@ -122,12 +133,84 @@ class ReconstructionLoss(nn.Module):
             # Poisson NLL: pred - target * log(pred + eps)
             eps = 1e-8
             loss = pred - target * torch.log(pred + eps)
+        elif self.loss_type == 'zinb':
+            # Zero-inflated negative binomial
+            if theta is None or pi is None:
+                raise ValueError("ZINB loss requires theta and pi parameters")
+            loss = self._zinb_loss(pred, theta, pi, target)
+        elif self.loss_type == 'combined':
+            # MSE + Cosine + Correlation
+            loss = self._combined_loss(pred, target)
+            return loss  # Already reduced
         else:
             raise ValueError(f"Unknown loss type: {self.loss_type}")
             
         if mask is not None:
             loss = loss * mask
             
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:
+            return loss
+    
+    def _zinb_loss(
+        self,
+        mean: torch.Tensor,
+        theta: torch.Tensor,
+        pi: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
+        """Compute ZINB negative log-likelihood."""
+        eps = 1e-8
+        theta = theta + eps
+        mean = mean + eps
+        
+        # NB log prob
+        nb_case = (
+            torch.lgamma(target + theta)
+            - torch.lgamma(theta)
+            - torch.lgamma(target + 1)
+            + theta * torch.log(theta / (theta + mean))
+            + target * torch.log(mean / (theta + mean))
+        )
+        
+        # Zero case: P(x=0) = π + (1-π) * NB(0)
+        zero_nb = theta * torch.log(theta / (theta + mean))
+        zero_case = torch.log(pi + (1 - pi) * torch.exp(zero_nb) + eps)
+        
+        # Non-zero case: P(x>0) = (1-π) * NB(x)
+        non_zero_case = torch.log(1 - pi + eps) + nb_case
+        
+        # Select based on target
+        nll = -torch.where(target < 0.5, zero_case, non_zero_case)
+        
+        return nll
+    
+    def _combined_loss(
+        self,
+        pred: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
+        """Combined MSE + cosine + correlation loss."""
+        # MSE component
+        mse = F.mse_loss(pred, target)
+        
+        # Cosine similarity
+        pred_norm = F.normalize(pred, dim=-1)
+        target_norm = F.normalize(target, dim=-1)
+        cosine = (1 - (pred_norm * target_norm).sum(dim=-1)).mean()
+        
+        # Per-cell correlation
+        pred_centered = pred - pred.mean(dim=-1, keepdim=True)
+        target_centered = target - target.mean(dim=-1, keepdim=True)
+        pred_std = pred_centered.std(dim=-1, keepdim=True) + 1e-8
+        target_std = target_centered.std(dim=-1, keepdim=True) + 1e-8
+        correlation = ((pred_centered / pred_std) * (target_centered / target_std)).mean(dim=-1)
+        corr_loss = (1 - correlation).mean()
+        
+        return mse + self.cosine_weight * cosine + self.correlation_weight * corr_loss
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':
@@ -246,6 +329,7 @@ class GRAILHeartLoss(nn.Module):
     - Cell type classification loss
     - Signaling network regularization
     - KL divergence (for variational model)
+    - Contrastive loss (for better embeddings)
     
     Args:
         lr_weight: Weight for L-R loss
@@ -253,6 +337,8 @@ class GRAILHeartLoss(nn.Module):
         cell_type_weight: Weight for cell type loss
         signaling_weight: Weight for signaling loss
         kl_weight: Weight for KL divergence
+        contrastive_weight: Weight for contrastive loss
+        recon_loss_type: Type of reconstruction loss ('mse', 'combined', 'zinb')
     """
     
     def __init__(
@@ -262,7 +348,10 @@ class GRAILHeartLoss(nn.Module):
         cell_type_weight: float = 1.0,
         signaling_weight: float = 0.1,
         kl_weight: float = 0.001,
+        contrastive_weight: float = 0.5,
         n_cell_types: Optional[int] = None,
+        use_contrastive: bool = True,
+        recon_loss_type: str = 'combined',
     ):
         super().__init__()
         
@@ -271,15 +360,34 @@ class GRAILHeartLoss(nn.Module):
         self.cell_type_weight = cell_type_weight
         self.signaling_weight = signaling_weight
         self.kl_weight = kl_weight
+        self.contrastive_weight = contrastive_weight
+        self.use_contrastive = use_contrastive
+        self.recon_loss_type = recon_loss_type
         
         self.lr_loss = LRInteractionLoss(pos_weight=2.0)
-        self.recon_loss = ReconstructionLoss(loss_type='mse')
+        self.recon_loss = ReconstructionLoss(
+            loss_type=recon_loss_type,
+            cosine_weight=0.3,
+            correlation_weight=0.3,
+        )
         self.signaling_loss = SignalingNetworkLoss()
         
         if n_cell_types is not None:
             self.cell_type_loss = CellTypeLoss(n_cell_types)
         else:
             self.cell_type_loss = None
+        
+        # Contrastive loss
+        if use_contrastive:
+            from .contrastive import ContrastiveLoss
+            self.contrastive_loss = ContrastiveLoss(
+                temperature=0.07,
+                use_spatial=True,
+                spatial_weight=0.5,
+                supervised_weight=1.0,
+            )
+        else:
+            self.contrastive_loss = None
             
     def forward(
         self,
@@ -308,7 +416,19 @@ class GRAILHeartLoss(nn.Module):
             
         # Reconstruction loss
         if 'reconstruction' in outputs and 'expression' in targets:
-            recon_loss = self.recon_loss(outputs['reconstruction'], targets['expression'])
+            # Handle ZINB decoder outputs (dict with mean, theta, dropout)
+            recon_output = outputs['reconstruction']
+            if isinstance(recon_output, dict) and 'mean' in recon_output:
+                # ZINB decoder output
+                recon_loss = self.recon_loss(
+                    recon_output,
+                    targets['expression'],
+                    theta=recon_output.get('theta'),
+                    pi=recon_output.get('dropout'),
+                )
+            else:
+                # Standard decoder output
+                recon_loss = self.recon_loss(recon_output, targets['expression'])
             loss_dict['recon_loss'] = recon_loss
             total_loss = total_loss + self.recon_weight * recon_loss
             
@@ -334,6 +454,21 @@ class GRAILHeartLoss(nn.Module):
         if 'kl_loss' in outputs:
             loss_dict['kl_loss'] = outputs['kl_loss']
             total_loss = total_loss + self.kl_weight * outputs['kl_loss']
+        
+        # Contrastive loss
+        if self.use_contrastive and self.contrastive_loss is not None:
+            embeddings = outputs.get('node_embeddings', outputs.get('cell_embeddings', None))
+            if embeddings is not None:
+                cell_types = targets.get('cell_types', None)
+                edge_index = targets.get('edge_index', None)
+                
+                contra_loss, contra_dict = self.contrastive_loss(
+                    embeddings=embeddings,
+                    labels=cell_types,
+                    edge_index=edge_index,
+                )
+                loss_dict['contrastive_loss'] = contra_loss
+                total_loss = total_loss + self.contrastive_weight * contra_loss
             
         loss_dict['total_loss'] = total_loss
         

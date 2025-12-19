@@ -29,6 +29,13 @@ from .trainer import (
     create_scheduler,
 )
 
+from .contrastive import (
+    ContrastiveLoss,
+    ProjectionHead,
+    AugmentationModule,
+    SimCLRLoss,
+)
+
 
 __all__ = [
     # Losses

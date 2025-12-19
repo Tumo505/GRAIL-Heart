@@ -167,10 +167,11 @@ def prepare_data(config: dict, data_dir: Path):
     val_loader = DataLoader(val_graphs, batch_size=data_config['batch_size'], shuffle=False)
     test_loader = DataLoader(test_graphs, batch_size=data_config['batch_size'], shuffle=False)
     
-    # Metadata
+    # Metadata - compute max n_cell_types across all datasets for consistent model
+    max_cell_types = max(ds.n_cell_types for ds in datasets if ds.n_cell_types is not None)
     metadata = {
         'n_genes': datasets[0].n_genes,
-        'n_cell_types': datasets[0].n_cell_types,
+        'n_cell_types': max_cell_types,  # Use max across all regions
         'gene_names': datasets[0].gene_names,
         'n_lr_pairs': lr_edge_dict['n_edges'],
     }
@@ -279,7 +280,10 @@ def main():
         cell_type_weight=loss_config['cell_type_weight'],
         signaling_weight=loss_config['signaling_weight'],
         kl_weight=loss_config['kl_weight'],
+        contrastive_weight=loss_config.get('contrastive_weight', 0.5),
         n_cell_types=metadata['n_cell_types'],
+        use_contrastive=loss_config.get('use_contrastive', True),
+        recon_loss_type=loss_config.get('recon_loss_type', 'combined'),
     )
     
     # Create trainer

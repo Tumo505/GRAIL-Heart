@@ -45,6 +45,7 @@ class GRAILHeart(nn.Module):
         use_spatial: Whether to use spatial coordinates
         use_variational: Whether to use variational encoder
         tasks: List of prediction tasks
+        decoder_type: Type of gene expression decoder ('basic', 'improved', 'zinb')
     """
     
     def __init__(
@@ -61,6 +62,7 @@ class GRAILHeart(nn.Module):
         use_spatial: bool = True,
         use_variational: bool = False,
         tasks: List[str] = ['lr', 'reconstruction'],
+        decoder_type: str = 'residual',  # 'basic', 'improved', 'residual', or 'zinb'
     ):
         super().__init__()
         
@@ -69,6 +71,7 @@ class GRAILHeart(nn.Module):
         self.use_spatial = use_spatial
         self.use_variational = use_variational
         self.tasks = tasks
+        self.decoder_type = decoder_type
         
         # Gene Expression Encoder
         if use_variational:
@@ -120,6 +123,7 @@ class GRAILHeart(nn.Module):
             n_cell_types=n_cell_types,
             n_lr_pairs=n_lr_pairs,
             tasks=tasks,
+            decoder_type=decoder_type,
         )
         
         # Variational KL loss weight
@@ -200,14 +204,17 @@ class GRAILHeart(nn.Module):
         if pos is not None:
             spatial_dist = torch.cdist(pos, pos)
             
-        # Multi-task predictions
-        outputs = self.predictor(z_gat, edge_index, spatial_dist)
+        # Multi-task predictions (pass original expression for residual decoder)
+        outputs = self.predictor(z_gat, edge_index, spatial_dist, x_original=x)
+        
+        # Always include node embeddings for contrastive learning
+        outputs['node_embeddings'] = z_gat
         
         # Add KL loss for variational
         if kl_loss is not None:
             outputs['kl_loss'] = kl_loss * self.kl_weight
             
-        # Optionally return embeddings
+        # Optionally return additional embeddings
         if return_embeddings:
             outputs['z_initial'] = z
             outputs['z_gat'] = z_gat
@@ -353,6 +360,7 @@ def create_grail_heart(
         'use_spatial': True,
         'use_variational': False,
         'tasks': ['lr', 'reconstruction'],
+        'decoder_type': 'residual',
     }
     
     if config is not None:

@@ -81,15 +81,27 @@ class EnhancedInference:
         
         # Get model config
         config = checkpoint.get('config', {})
+        model_config = config.get('model', {})
+        
+        # Get metadata for n_cell_types
+        n_cell_types = config.get('n_cell_types', checkpoint.get('n_cell_types', 10))
+        n_genes = config.get('n_genes', checkpoint.get('n_genes', 2000))
         
         # Initialize model with matching parameters
+        tasks = model_config.get('tasks', ['lr', 'reconstruction', 'cell_type'])
+        
         self.model = GRAILHeart(
-            n_genes=config.get('n_genes', 2000),
-            hidden_dim=config.get('hidden_dim', 256),
-            n_gat_layers=config.get('n_gat_layers', 3),
-            n_heads=config.get('n_heads', 8),
-            n_cell_types=config.get('n_cell_types', None),
-            dropout=config.get('dropout', 0.1),
+            n_genes=n_genes,
+            hidden_dim=model_config.get('hidden_dim', 256),
+            n_gat_layers=model_config.get('n_gat_layers', 3),
+            n_heads=model_config.get('n_heads', 8),
+            n_cell_types=n_cell_types,
+            n_edge_types=model_config.get('n_edge_types', 2),
+            encoder_dims=model_config.get('encoder_dims', [512, 256]),
+            dropout=model_config.get('dropout', 0.1),
+            use_spatial=model_config.get('use_spatial', True),
+            use_variational=model_config.get('use_variational', False),
+            tasks=tasks,
             n_lr_pairs=2,  # Match checkpoint
         )
         
