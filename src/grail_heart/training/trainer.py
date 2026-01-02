@@ -455,10 +455,17 @@ class GRAILHeartTrainer:
         torch.save(checkpoint, path)
         print(f"  Saved checkpoint: {path}")
         
-    def load_checkpoint(self, path: Union[str, Path]):
-        """Load model checkpoint."""
+    def load_checkpoint(self, path: Union[str, Path], map_location: Optional[str] = None):
+        """Load model checkpoint.
+        
+        Args:
+            path: Path to checkpoint file
+            map_location: Device to load checkpoint to (e.g., 'cpu'). 
+                         If None, uses self.device.
+        """
+        load_device = map_location if map_location else self.device
         # weights_only=False is safe here since we generated these checkpoints ourselves
-        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+        checkpoint = torch.load(path, map_location=load_device, weights_only=False)
         
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

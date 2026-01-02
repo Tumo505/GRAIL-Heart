@@ -27,8 +27,12 @@ warnings.filterwarnings('ignore')
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from grail_heart.models import GRAILHeart
+from grail_heart.data.cellchat_database import (
+    get_omnipath_lr_database,
+    filter_for_cardiac,
+    annotate_cardiac_pathways,
+)
 from grail_heart.data.expanded_lr_database import (
-    get_expanded_lr_database,
     filter_to_expressed_genes,
     compute_lr_scores,
     get_lr_genes,
@@ -87,6 +91,13 @@ class EnhancedInference:
         n_cell_types = config.get('n_cell_types', checkpoint.get('n_cell_types', 10))
         n_genes = config.get('n_genes', checkpoint.get('n_genes', 2000))
         
+        # Get n_lr_pairs from checkpoint - use the value from training
+        # Note: current model was trained with expanded_lr_database (397 pairs)
+        # For inference with OmniPath, we'll use the original model architecture
+        from grail_heart.data.expanded_lr_database import get_expanded_lr_database
+        lr_pairs_for_model = get_expanded_lr_database()
+        n_lr_pairs = config.get('n_lr_pairs', checkpoint.get('n_lr_pairs', len(lr_pairs_for_model)))
+        
         # Initialize model with matching parameters
         tasks = model_config.get('tasks', ['lr', 'reconstruction', 'cell_type'])
         
@@ -102,7 +113,7 @@ class EnhancedInference:
             use_spatial=model_config.get('use_spatial', True),
             use_variational=model_config.get('use_variational', False),
             tasks=tasks,
-            n_lr_pairs=2,  # Match checkpoint
+            n_lr_pairs=n_lr_pairs,
         )
         
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -112,13 +123,15 @@ class EnhancedInference:
         print(f"Model loaded successfully ({sum(p.numel() for p in self.model.parameters()):,} parameters)")
     
     def load_lr_database(self) -> None:
-        """Load expanded L-R database."""
-        print("Loading expanded L-R database...")
-        self.lr_database = get_expanded_lr_database()
+        """Load L-R database from OmniPath (CellPhoneDB + CellChat + more)."""
+        print("Loading L-R database from OmniPath...")
+        cache_path = Path(self.data_dir) / 'lr_database_cache.csv'
+        self.lr_database = get_omnipath_lr_database(cache_path=cache_path)
+        self.lr_database = annotate_cardiac_pathways(self.lr_database)
         print(f"Loaded {len(self.lr_database)} L-R pairs")
         print(f"  Unique ligands: {len(self.lr_database['ligand'].unique())}")
         print(f"  Unique receptors: {len(self.lr_database['receptor'].unique())}")
-        print(f"  Pathways: {len(self.lr_database['pathway'].unique())}")
+        print(f"  Pathway categories: {len(self.lr_database['pathway'].unique())}")
     
     def process_region(
         self,

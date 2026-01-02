@@ -74,7 +74,7 @@ class LRInteractionPredictor(nn.Module):
             z_src: Source (ligand-expressing) cell embeddings [E, D]
             z_dst: Target (receptor-expressing) cell embeddings [E, D]
             lr_pair_idx: Optional L-R pair indices [E]
-            
+
         Returns:
             Interaction scores [E, 1]
         """

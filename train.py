@@ -28,6 +28,7 @@ from grail_heart.data import (
     SpatialGraphBuilder,
     LigandReceptorDatabase,
 )
+from grail_heart.data.cellchat_database import get_omnipath_lr_database, filter_for_cardiac
 from grail_heart.models import GRAILHeart, create_grail_heart
 from grail_heart.training import (
     GRAILHeartLoss,
@@ -72,9 +73,20 @@ def prepare_data(config: dict, data_dir: Path):
     
     data_config = config['data']
     
-    # Initialize L-R database
-    print("Loading ligand-receptor database...")
-    lr_db = LigandReceptorDatabase(source='builtin')
+    # Initialize L-R database from OmniPath (CellPhoneDB + CellChat + more)
+    print("Loading L-R database from OmniPath (CellPhoneDB, CellChat, ICELLNET)...")
+    cache_path = data_dir / 'lr_database_cache.csv'
+    lr_pairs_df = get_omnipath_lr_database(cache_path=cache_path)
+    print(f"Loaded {len(lr_pairs_df)} L-R pairs from OmniPath database")
+    
+    # Create a simple object to hold the pairs for compatibility
+    class LRDatabase:
+        def __init__(self, pairs_df):
+            self.lr_pairs = pairs_df
+        def get_pairs(self):
+            return self.lr_pairs
+    
+    lr_db = LRDatabase(lr_pairs_df)
     
     # Find all h5ad files
     h5ad_files = list(data_dir.rglob('*.h5ad'))
@@ -89,9 +101,14 @@ def prepare_data(config: dict, data_dir: Path):
     if not h5ad_files:
         raise FileNotFoundError(f"No h5ad files found in {data_dir}")
     
+    # Get max files from config (None = no limit, use all files)
+    max_files = data_config.get('max_files', None)
+    files_to_load = h5ad_files if max_files is None else h5ad_files[:max_files]
+    print(f"Loading {len(files_to_load)} of {len(h5ad_files)} available files")
+    
     # Load datasets
     datasets = []
-    for f in h5ad_files[:6]:  # Limit for initial training
+    for f in files_to_load:
         try:
             print(f"Loading {f.name}...")
             ds = SpatialTranscriptomicsDataset(
@@ -120,12 +137,16 @@ def prepare_data(config: dict, data_dir: Path):
         k=data_config['k_neighbors'],
     )
     
+    # Get L-R pairs from database for edge labeling
+    lr_pairs = lr_db.get_pairs()
+    print(f"L-R database has {len(lr_pairs)} pairs")
+    
     graphs = []
     for i, ds in enumerate(datasets):
         print(f"Building graph {i+1}/{len(datasets)}...")
         
-        # Get L-R edges
-        lr_edge_dict = lr_db.to_edge_dict({g: i for i, g in enumerate(ds.gene_names)})
+        # Build gene name to index mapping
+        gene_to_idx = {g: idx for idx, g in enumerate(ds.gene_names)}
         
         # Build graph with L-R edges
         graph = graph_builder.build_graph(
@@ -134,14 +155,50 @@ def prepare_data(config: dict, data_dir: Path):
             cell_types=ds.cell_types,
         )
         
-        # Add L-R edge information
-        if lr_edge_dict['n_edges'] > 0:
-            # Mark some edges as L-R type based on co-expression
-            edge_type = torch.zeros(graph.edge_index.shape[1], dtype=torch.long)
-            graph.edge_type = edge_type
+        # Label edges as L-R (type=1) based on real L-R database
+        # An edge (i,j) is an L-R edge if cell i expresses a ligand and cell j expresses its receptor
+        edge_type = torch.zeros(graph.edge_index.shape[1], dtype=torch.long)
+        
+        # Find expressed L-R pairs in this dataset
+        lr_edge_count = 0
+        expression_threshold = 0.0  # Minimum expression to consider gene "expressed"
+        
+        for _, row in lr_pairs.iterrows():
+            ligand = row['ligand']
+            receptor = row['receptor']
             
+            # Check if both genes are in the dataset
+            if ligand in gene_to_idx and receptor in gene_to_idx:
+                lig_idx = gene_to_idx[ligand]
+                rec_idx = gene_to_idx[receptor]
+                
+                # Get expression vectors
+                lig_expr = ds.expression[:, lig_idx]
+                rec_expr = ds.expression[:, rec_idx]
+                
+                # Find cells expressing ligand and receptor
+                lig_cells = (lig_expr > expression_threshold).nonzero(as_tuple=True)[0]
+                rec_cells = (rec_expr > expression_threshold).nonzero(as_tuple=True)[0]
+                
+                if len(lig_cells) > 0 and len(rec_cells) > 0:
+                    # For each edge, check if source expresses ligand and target expresses receptor
+                    src_nodes = graph.edge_index[0]
+                    dst_nodes = graph.edge_index[1]
+                    
+                    # Create masks for ligand/receptor expression
+                    src_has_ligand = (lig_expr[src_nodes] > expression_threshold)
+                    dst_has_receptor = (rec_expr[dst_nodes] > expression_threshold)
+                    
+                    # Mark edges where source has ligand AND target has receptor
+                    lr_mask = src_has_ligand & dst_has_receptor
+                    edge_type[lr_mask] = 1
+                    lr_edge_count += lr_mask.sum().item()
+        
+        graph.edge_type = edge_type
+        n_lr_edges = (edge_type == 1).sum().item()
+        
         graphs.append(graph)
-        print(f"  Nodes: {graph.num_nodes}, Edges: {graph.num_edges}")
+        print(f"  Nodes: {graph.num_nodes}, Edges: {graph.num_edges}, L-R edges: {n_lr_edges}")
         
     # Split into train/val/test
     n_graphs = len(graphs)
@@ -173,7 +230,7 @@ def prepare_data(config: dict, data_dir: Path):
         'n_genes': datasets[0].n_genes,
         'n_cell_types': max_cell_types,  # Use max across all regions
         'gene_names': datasets[0].gene_names,
-        'n_lr_pairs': lr_edge_dict['n_edges'],
+        'n_lr_pairs': len(lr_pairs),  # Number of L-R pairs from database
     }
     
     return train_loader, val_loader, test_loader, metadata

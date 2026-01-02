@@ -1,7 +1,7 @@
-# GRAIL-Heart Configuration
-# Default training configuration
+# GRAIL-Heart Cross-Validation Configuration
+# Optimized for memory efficiency during CV training
 
-# Model Architecture
+# Model Architecture - slightly smaller for CV
 model:
   hidden_dim: 256
   n_gat_layers: 3
@@ -15,7 +15,6 @@ model:
     - lr
     - reconstruction
     - cell_type
-  # Reconstruction decoder type: 'basic', 'improved', 'residual', or 'zinb'
   decoder_type: residual
 
 # Data Configuration
@@ -27,18 +26,20 @@ data:
   min_genes: 200
   graph_method: knn
   k_neighbors: 6
-  batch_size: 1  # Full graph per batch
+  batch_size: 1
   num_workers: 0
-  max_files: null  # null = no limit (use all files), or set integer to limit
+  max_files: null
+  # Limit L-R pairs for memory efficiency (null = use all)
+  max_lr_pairs: 5000
 
-# Training Configuration
+# Training Configuration - fewer epochs for CV
 training:
-  n_epochs: 200
+  n_epochs: 100
   learning_rate: 0.0001
   weight_decay: 0.01
   optimizer: adamw
   scheduler: cosine
-  warmup_epochs: 10
+  warmup_epochs: 5
   grad_clip: 1.0
   grad_accum_steps: 1
   mixed_precision: true
@@ -46,24 +47,23 @@ training:
 # Loss Weights
 loss:
   lr_weight: 1.0
-  recon_weight: 1.0  # Increased from 0.5 for better reconstruction
+  recon_weight: 1.0
   cell_type_weight: 1.0
   signaling_weight: 0.1
   kl_weight: 0.001
   contrastive_weight: 0.5
   use_contrastive: true
-  # Reconstruction loss type: 'mse', 'combined', or 'zinb'
   recon_loss_type: combined
 
-# Early Stopping
+# Early Stopping - more aggressive for CV
 early_stopping:
-  patience: 25
+  patience: 15
   monitor: val_total_loss
   mode: min
 
 # Checkpointing
 checkpoint:
-  save_interval: 5
+  save_interval: 10
   save_best: true
   save_last: true
 
@@ -71,18 +71,17 @@ checkpoint:
 logging:
   log_interval: 10
   use_tensorboard: true
-  use_wandb: true
-  wandb_project: grail-heart
-  wandb_entity: null  # Set to your wandb username/team, or null for default
+  use_wandb: false  # Disable wandb for CV to avoid clutter
+  wandb_project: grail-heart-cv
+  wandb_entity: null
 
 # Data Paths
 paths:
   data_dir: data
   output_dir: outputs
-  checkpoint_dir: outputs/checkpoints
-  log_dir: outputs/logs
 
 # Hardware
 hardware:
   device: cuda
   seed: 42
+  num_workers: 0

@@ -7,7 +7,7 @@ from src.grail_heart.training.trainer import GRAILHeartTrainer
 from src.grail_heart.models.grail_heart import GRAILHeart
 from src.grail_heart.data.datasets import SpatialTranscriptomicsDataset
 from src.grail_heart.data.graph_builder import SpatialGraphBuilder
-from src.grail_heart.data.lr_database import LigandReceptorDatabase
+from src.grail_heart.data.cellchat_database import get_omnipath_lr_database
 from torch_geometric.loader import DataLoader
 
 
@@ -22,13 +22,14 @@ def main():
     data_dir = Path('data/HeartCellAtlasv2/visium-OCT_LV_raw.h5ad').parent
     h5ad_files = sorted(data_dir.glob('*.h5ad'))
     
-    # Load L-R database
-    lr_db = LigandReceptorDatabase()
-    print(f"Loaded L-R database with {len(lr_db.lr_pairs)} pairs")
+    # Load L-R database from OmniPath (CellPhoneDB + CellChat + more)
+    cache_path = Path('data/lr_database_cache.csv')
+    lr_pairs = get_omnipath_lr_database(cache_path=cache_path)
+    print(f"Loaded L-R database with {len(lr_pairs)} pairs from OmniPath")
     
-    # Load datasets
+    # Load datasets (no limit - use all files)
     datasets = []
-    for f in h5ad_files[:6]:
+    for f in h5ad_files:
         try:
             print(f"Loading {f.name}...")
             ds = SpatialTranscriptomicsDataset(
@@ -45,7 +46,7 @@ def main():
         except Exception as e:
             print(f"  Failed to load: {e}")
     
-    # Build graphs
+    # Build graphs with proper L-R edge labeling (must match training)
     print("\nBuilding graphs...")
     graph_builder = SpatialGraphBuilder(
         method=data_config['graph_method'],
@@ -55,7 +56,9 @@ def main():
     graphs = []
     for i, ds in enumerate(datasets):
         print(f"Building graph {i+1}/{len(datasets)}...")
-        lr_edge_dict = lr_db.to_edge_dict({g: i for i, g in enumerate(ds.gene_names)})
+        
+        # Build gene name to index mapping
+        gene_to_idx = {g: idx for idx, g in enumerate(ds.gene_names)}
         
         # Build graph
         graph = graph_builder.build_graph(
@@ -64,21 +67,50 @@ def main():
             cell_types=ds.cell_types,
         )
         
-        # Add L-R edge information
-        if lr_edge_dict['n_edges'] > 0:
-            edge_type = torch.zeros(graph.edge_index.shape[1], dtype=torch.long)
-            graph.edge_type = edge_type
+        # Label edges as L-R based on real database (must match training)
+        edge_type = torch.zeros(graph.edge_index.shape[1], dtype=torch.long)
+        expression_threshold = 0.0
+        
+        for _, row in lr_pairs.iterrows():
+            ligand = row['ligand']
+            receptor = row['receptor']
+            
+            if ligand in gene_to_idx and receptor in gene_to_idx:
+                lig_idx = gene_to_idx[ligand]
+                rec_idx = gene_to_idx[receptor]
+                
+                lig_expr = ds.expression[:, lig_idx]
+                rec_expr = ds.expression[:, rec_idx]
+                
+                src_nodes = graph.edge_index[0]
+                dst_nodes = graph.edge_index[1]
+                
+                src_has_ligand = (lig_expr[src_nodes] > expression_threshold)
+                dst_has_receptor = (rec_expr[dst_nodes] > expression_threshold)
+                
+                lr_mask = src_has_ligand & dst_has_receptor
+                edge_type[lr_mask] = 1
+        
+        graph.edge_type = edge_type
+        n_lr_edges = (edge_type == 1).sum().item()
             
         graphs.append(graph)
-        print(f"  Nodes: {graph.num_nodes}, Edges: {graph.num_edges}")
+        print(f"  Nodes: {graph.num_nodes}, Edges: {graph.num_edges}, L-R edges: {n_lr_edges}")
     
     # Get dimensions from first graph
     sample_graph = graphs[0]
     n_genes = sample_graph.x.shape[1]
-    # The training was done with n_cell_types=None, so we use None here too
-    n_cell_types = None
+    
+    # Compute max cell types across all datasets (must match training)
+    max_cell_types = max(ds.n_cell_types for ds in datasets if ds.n_cell_types is not None)
+    n_cell_types = max_cell_types
 
-    # Create model
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # Load checkpoint first to get architecture info
+    checkpoint = torch.load('outputs/checkpoints/best.pt', map_location=device, weights_only=False)
+    
+    # Create model with matching architecture
     model_config = config['model']
     model = GRAILHeart(
         n_genes=n_genes,
@@ -92,14 +124,12 @@ def main():
         use_spatial=model_config.get('use_spatial', True),
         use_variational=model_config.get('use_variational', False),
         tasks=model_config.get('tasks', ['lr', 'reconstruction']),
-        n_lr_pairs=2,  # Match checkpoint
+        n_lr_pairs=len(lr_pairs),  # Must match training
     )
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
-    # Load best checkpoint
-    checkpoint = torch.load('outputs/checkpoints/best.pt', map_location=device, weights_only=False)
+    # Load checkpoint weights
     model.load_state_dict(checkpoint['model_state_dict'])
     print(f"\nLoaded best checkpoint from epoch {checkpoint['epoch']}")
     print(f"Best validation loss: {checkpoint['best_val_loss']:.4f}" if checkpoint['best_val_loss'] != float('inf') else "Best validation loss: (not tracked)")
