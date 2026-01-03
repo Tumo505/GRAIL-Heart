@@ -17,6 +17,11 @@ model:
     - cell_type
   # Reconstruction decoder type: 'basic', 'improved', 'residual', or 'zinb'
   decoder_type: residual
+  # Inverse modelling configuration
+  use_inverse_modelling: true
+  n_fates: null  # null = use n_cell_types
+  n_pathways: 20
+  n_mechano_pathways: 8
 
 # Data Configuration
 data:
@@ -54,6 +59,12 @@ loss:
   use_contrastive: true
   # Reconstruction loss type: 'mse', 'combined', or 'zinb'
   recon_loss_type: combined
+  # Inverse modelling loss weights
+  use_inverse_losses: true
+  fate_weight: 0.5
+  causal_weight: 0.3
+  differentiation_weight: 0.2
+  gene_target_weight: 0.3
 
 # Early Stopping
 early_stopping:

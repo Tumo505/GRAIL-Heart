@@ -330,6 +330,7 @@ class GRAILHeartLoss(nn.Module):
     - Signaling network regularization
     - KL divergence (for variational model)
     - Contrastive loss (for better embeddings)
+    - Inverse modelling losses (NEW): fate prediction, causal consistency
     
     Args:
         lr_weight: Weight for L-R loss
@@ -339,6 +340,9 @@ class GRAILHeartLoss(nn.Module):
         kl_weight: Weight for KL divergence
         contrastive_weight: Weight for contrastive loss
         recon_loss_type: Type of reconstruction loss ('mse', 'combined', 'zinb')
+        use_inverse_losses: Whether to use inverse modelling losses (NEW)
+        fate_weight: Weight for fate prediction loss (NEW)
+        causal_weight: Weight for causal consistency loss (NEW)
     """
     
     def __init__(
@@ -352,6 +356,12 @@ class GRAILHeartLoss(nn.Module):
         n_cell_types: Optional[int] = None,
         use_contrastive: bool = True,
         recon_loss_type: str = 'combined',
+        # NEW: Inverse modelling loss parameters
+        use_inverse_losses: bool = True,
+        fate_weight: float = 0.5,
+        causal_weight: float = 0.3,
+        differentiation_weight: float = 0.2,
+        gene_target_weight: float = 0.3,
     ):
         super().__init__()
         
@@ -363,6 +373,13 @@ class GRAILHeartLoss(nn.Module):
         self.contrastive_weight = contrastive_weight
         self.use_contrastive = use_contrastive
         self.recon_loss_type = recon_loss_type
+        
+        # NEW: Inverse modelling loss weights
+        self.use_inverse_losses = use_inverse_losses
+        self.fate_weight = fate_weight
+        self.causal_weight = causal_weight
+        self.differentiation_weight = differentiation_weight
+        self.gene_target_weight = gene_target_weight
         
         self.lr_loss = LRInteractionLoss(pos_weight=2.0)
         self.recon_loss = ReconstructionLoss(
@@ -395,7 +412,7 @@ class GRAILHeartLoss(nn.Module):
         targets: Dict[str, torch.Tensor],
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """
-        Compute combined loss.
+        Compute combined loss (forward + inverse modelling).
         
         Args:
             outputs: Model outputs dictionary
@@ -407,6 +424,8 @@ class GRAILHeartLoss(nn.Module):
         """
         loss_dict = {}
         total_loss = 0.0
+        
+        # ===== FORWARD MODELLING LOSSES =====
         
         # L-R interaction loss
         if 'lr_scores' in outputs and 'lr_targets' in targets:
@@ -469,6 +488,46 @@ class GRAILHeartLoss(nn.Module):
                 )
                 loss_dict['contrastive_loss'] = contra_loss
                 total_loss = total_loss + self.contrastive_weight * contra_loss
+        
+        # ===== INVERSE MODELLING LOSSES (NEW) =====
+        # "This inverse modelling framework will elucidate mechanosensitive pathways
+        # that modulate early-stage cardiac tissue patterning"
+        
+        if self.use_inverse_losses:
+            # 1. Cell fate prediction loss (use cell_types as fate labels)
+            if 'fate_logits' in outputs and 'cell_types' in targets:
+                fate_loss = F.cross_entropy(outputs['fate_logits'], targets['cell_types'])
+                loss_dict['fate_loss'] = fate_loss
+                total_loss = total_loss + self.fate_weight * fate_loss
+                
+            # 2. Differentiation score supervision (if available)
+            if 'differentiation_score' in outputs and 'differentiation_stage' in targets:
+                diff_loss = F.mse_loss(
+                    outputs['differentiation_score'].squeeze(),
+                    targets['differentiation_stage'],
+                )
+                loss_dict['differentiation_loss'] = diff_loss
+                total_loss = total_loss + self.differentiation_weight * diff_loss
+                
+            # 3. Causal sparsity regularization
+            # Encourage sparse causal attributions (most L-R pairs are not causal)
+            if 'causal_lr_scores' in outputs:
+                causal_sparsity = outputs['causal_lr_scores'].mean()
+                loss_dict['causal_sparsity'] = causal_sparsity
+                total_loss = total_loss + self.causal_weight * causal_sparsity
+                
+            # 4. Target gene prediction loss
+            if 'predicted_expression_from_lr' in outputs and 'expression' in targets:
+                # Use destination cell expression as target
+                src, dst = targets.get('edge_index', (None, None))
+                if dst is not None:
+                    target_expression = targets['expression'][dst]
+                    gene_target_loss = F.mse_loss(
+                        outputs['predicted_expression_from_lr'],
+                        target_expression,
+                    )
+                    loss_dict['gene_target_loss'] = gene_target_loss
+                    total_loss = total_loss + self.gene_target_weight * gene_target_loss
             
         loss_dict['total_loss'] = total_loss
         

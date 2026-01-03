@@ -79,6 +79,9 @@ class GRAILHeartTrainer:
         self.log_interval = log_interval
         self.save_interval = save_interval
         
+        # Check if model has inverse modelling enabled
+        self.use_inverse_modelling = getattr(model, 'use_inverse_modelling', False)
+        
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -91,13 +94,20 @@ class GRAILHeartTrainer:
         self.best_val_loss = float('inf')
         self.best_val_metric = 0.0
         
-        # Metric trackers
+        # Metric trackers - include inverse modelling metrics if enabled
+        train_metric_names = ['total_loss', 'lr_loss', 'recon_loss', 'cell_type_loss']
+        val_metric_names = ['total_loss', 'lr_loss', 'recon_loss', 'auroc', 'auprc', 'pearson_mean']
+        
+        if self.use_inverse_modelling:
+            train_metric_names.extend(['fate_loss', 'causal_sparsity'])
+            val_metric_names.extend(['fate_accuracy'])
+            
         self.train_metrics = MetricTracker(
-            ['total_loss', 'lr_loss', 'recon_loss', 'cell_type_loss'],
+            train_metric_names,
             prefix='train'
         )
         self.val_metrics = MetricTracker(
-            ['total_loss', 'lr_loss', 'recon_loss', 'auroc', 'auprc', 'pearson_mean'],
+            val_metric_names,
             prefix='val'
         )
         
@@ -147,9 +157,9 @@ class GRAILHeartTrainer:
         for batch_idx, data in enumerate(train_loader):
             data = data.to(self.device)
             
-            # Forward pass
+            # Forward pass - enable inverse modelling if available
             with torch.amp.autocast('cuda', enabled=self.mixed_precision):
-                outputs = self.model(data)
+                outputs = self.model(data, run_inverse=self.use_inverse_modelling)
                 
                 # Prepare targets
                 targets = self._prepare_targets(data, outputs)
@@ -184,13 +194,20 @@ class GRAILHeartTrainer:
                 
             # Update metrics
             batch_size = data.num_graphs if hasattr(data, 'num_graphs') else 1
-            self.train_metrics.update({
+            metrics_update = {
                 'total_loss': loss_dict['total_loss'].item(),
                 'lr_loss': loss_dict.get('lr_loss', torch.tensor(0)).item(),
                 'recon_loss': loss_dict.get('recon_loss', torch.tensor(0)).item(),
                 'cell_type_loss': loss_dict.get('cell_type_loss', torch.tensor(0)).item(),
                 'contrastive_loss': loss_dict.get('contrastive_loss', torch.tensor(0)).item(),
-            }, count=batch_size)
+            }
+            
+            # Add inverse modelling metrics if available
+            if self.use_inverse_modelling:
+                metrics_update['fate_loss'] = loss_dict.get('fate_loss', torch.tensor(0)).item()
+                metrics_update['causal_sparsity'] = loss_dict.get('causal_sparsity', torch.tensor(0)).item()
+                
+            self.train_metrics.update(metrics_update, count=batch_size)
             
             # Logging
             if batch_idx % self.log_interval == 0:
@@ -228,7 +245,7 @@ class GRAILHeartTrainer:
         for data in val_loader:
             data = data.to(self.device)
             
-            outputs = self.model(data)
+            outputs = self.model(data, run_inverse=self.use_inverse_modelling)
             targets = self._prepare_targets(data, outputs)
             
             loss, loss_dict = self.loss_fn(outputs, targets)

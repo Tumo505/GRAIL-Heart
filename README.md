@@ -1,6 +1,6 @@
 # GRAIL-Heart: Graph-based Reconstruction of Artificial Intercellular Links
 
-A Graph Neural Network framework for analyzing cell-cell communication in cardiac spatial transcriptomics data.
+A Graph Neural Network framework for analyzing cell-cell communication in cardiac spatial transcriptomics data, featuring both **forward** and **inverse modelling** capabilities.
 
 ## Overview
 
@@ -10,6 +10,14 @@ GRAIL-Heart is a deep learning model designed to discover and analyze ligand-rec
 - **Spatial information** through positional embeddings
 - **Graph attention mechanisms** for neighborhood analysis
 - **Multi-task learning** for simultaneous prediction of L-R interactions, gene expression reconstruction, and cell type classification
+- **Inverse modelling** for inferring causal L-R signals that drive cell differentiation
+
+### Forward vs Inverse Modelling
+
+| Modelling Type | Input | Output | Question Answered |
+|----------------|-------|--------|-------------------|
+| **Forward** | Expression + Spatial | L-R predictions | "Which L-R interactions are active?" |
+| **Inverse** | Observed phenotype | Causal L-R signals | "What signals drove this differentiation?" |
 
 The model is trained on the Heart Cell Atlas v2, comprising spatial transcriptomics data from six distinct cardiac regions (Apex, Left Atrium, Left Ventricle, Right Atrium, Right Ventricle, and Septum).
 
@@ -19,6 +27,8 @@ The model is trained on the Heart Cell Atlas v2, comprising spatial transcriptom
 - Edge-type aware Graph Attention Networks with spatial and L-R edge types
 - **OmniPath L-R database integration** (22,000+ curated pairs from CellPhoneDB, CellChat, ICELLNET)
 - **Leave-One-Region-Out (LORO) cross-validation** for robust generalization assessment
+- **Inverse modelling framework** for causal L-R inference
+- **Mechanosensitive pathway analysis** (YAP/TAZ, Integrin-FAK, Piezo, TGF-β)
 - Comprehensive spatial visualization of cell-cell communication networks
 - Mixed precision training for efficient GPU utilization
 - Complete inference pipeline with cross-region analysis
@@ -61,11 +71,12 @@ GRAIL-Heart/
 │   ├── models/                       # Neural network architectures
 │   │   ├── encoders.py              # Gene and spatial encoders
 │   │   ├── gat_layers.py            # Graph Attention layers with edge type awareness
-│   │   ├── grail_heart.py           # Main GRAIL-Heart model
+│   │   ├── grail_heart.py           # Main GRAIL-Heart model (forward + inverse)
+│   │   ├── inverse_modelling.py     # Inverse modelling components (NEW)
 │   │   ├── predictors.py            # Prediction heads for L-R, reconstruction, classification
 │   │   └── reconstruction.py        # Gene expression decoders
 │   ├── training/                     # Training utilities
-│   │   ├── losses.py                # Multi-task loss functions
+│   │   ├── losses.py                # Multi-task loss functions (including inverse losses)
 │   │   ├── metrics.py               # Evaluation metrics
 │   │   ├── trainer.py               # Training loop and checkpointing
 │   │   └── contrastive.py           # Contrastive learning modules
@@ -81,14 +92,16 @@ GRAIL-Heart/
 │   ├── checkpoints/                 # Model checkpoints
 │   ├── logs/                        # TensorBoard logs
 │   ├── analysis/                    # Network analysis outputs
-│   └── enhanced_analysis/           # Enhanced inference results
+│   ├── enhanced_analysis/           # Enhanced inference results
+│   └── inverse_analysis/            # Inverse modelling results (NEW)
 ├── docs/                             # Documentation
-│   ├── METHODOLOGY.md               # Detailed methods
+│   ├── METHODOLOGY.md               # Detailed methods (including inverse modelling)
 │   └── RESULTS.md                   # Results and findings
 ├── notebooks/                        # Jupyter notebooks
 ├── train.py                          # Standard training script
 ├── train_cv.py                       # Cross-validation training script
 ├── enhanced_inference.py             # Enhanced inference pipeline
+├── inverse_inference.py              # Inverse modelling analysis (NEW)
 ├── evaluate_test.py                  # Model evaluation script
 ├── check_checkpoint.py               # Checkpoint inspection utility
 └── README.md                         # This file
@@ -172,12 +185,22 @@ The framework will automatically:
 
 ## Usage
 
-### Training with Cross-Validation (Recommended)
+### Training (Forward + Inverse Modelling)
+
+Training jointly optimizes both forward modelling (expression to L-R predictions) and inverse modelling (inferring causal L-R signals that drive cell fates). By default, inverse modelling is enabled.
+
+**Standard Training:**
+
+```bash
+python train.py --config configs/default.yaml
+```
+
+**Cross-Validation (Recommended):**
 
 Run Leave-One-Region-Out cross-validation for robust evaluation:
 
 ```bash
-# Full 6-fold CV
+# Full 6-fold CV with inverse modelling
 python train_cv.py --config configs/cv.yaml
 
 # Quick test (specific folds, fewer epochs)
@@ -214,6 +237,11 @@ model:
   encoder_dims: [512, 256] # Gene encoder hidden dims
   dropout: 0.1             # Dropout rate
   decoder_type: residual   # Expression decoder type
+  # Inverse modelling
+  use_inverse_modelling: true
+  n_fates: null            # Use n_cell_types if null
+  n_pathways: 20           # Signaling pathways
+  n_mechano_pathways: 8    # Mechanosensitive pathways
 
 data:
   max_lr_pairs: 5000       # Limit L-R pairs (memory optimization)
@@ -231,6 +259,12 @@ loss:
   recon_weight: 1.0        # Reconstruction weight
   cell_type_weight: 1.0    # Cell type classification weight
   contrastive_weight: 0.5  # Contrastive learning weight
+  # Inverse modelling losses
+  use_inverse_losses: true
+  fate_weight: 0.5         # Cell fate prediction weight
+  causal_weight: 0.3       # Causal sparsity regularization
+  differentiation_weight: 0.2
+  gene_target_weight: 0.3
 ```
 
 ### Inference
@@ -249,6 +283,35 @@ This generates:
 - Spatial network visualizations (PNG figures)
 - Interaction networks (JSON files)
 - Cross-region comparison analysis
+
+### Inverse Modelling Analysis
+
+Run inverse modelling to identify causal L-R signals driving cell fate:
+
+```bash
+python inverse_inference.py \
+  --checkpoint outputs/checkpoints/best.pt \
+  --data_dir data/HeartCellAtlasv2 \
+  --output_dir outputs/inverse_analysis
+```
+
+This generates:
+- **Causal L-R Rankings**: Top L-R pairs driving each cell fate
+- **Mechanosensitive Pathway Activation**: YAP/TAZ, Integrin, Piezo pathway scores
+- **Cell Fate Trajectories**: Differentiation predictions per cell
+- **Network Visualizations**: Causal signalling network graphs
+
+```python
+# Programmatic inverse inference
+from grail_heart.models import GRAILHeart
+
+model = GRAILHeart.load_from_checkpoint("outputs/checkpoints/best.pt")
+
+# Run inverse modelling
+results = model.infer_causal_signals(data, target_fate=0)  # e.g., cardiomyocyte fate
+print(results['causal_lr_rankings'][:10])  # Top 10 causal L-R pairs
+print(results['mechano_pathway_activation'])  # Mechanosensitive pathway scores
+```
 
 ### Evaluation
 

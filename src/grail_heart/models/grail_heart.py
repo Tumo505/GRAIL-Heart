@@ -3,6 +3,15 @@ GRAIL-Heart: Graph-based Reconstruction of Artificial Intercellular Links
 
 Main model architecture that integrates gene encoding, graph attention,
 and multi-task prediction for cardiac spatial transcriptomics analysis.
+
+This model implements BOTH forward and inverse modelling:
+- FORWARD: Expression → L-R predictions (original GRAIL-Heart)
+- INVERSE: Observed fate/phenotype → Inferred causal L-R signals
+
+Reference (Abstract):
+    "This inverse modelling framework will also elucidate mechanosensitive pathways
+    that modulate early-stage cardiac tissue patterning, linking molecular signalling
+    to the formation of soft contractile structures."
 """
 
 import torch
@@ -20,6 +29,13 @@ from .predictors import (
     GeneExpressionDecoder,
     MultiTaskHead,
 )
+from .inverse_modelling import (
+    InverseSignalInference,
+    CellFatePredictionHead,
+    CounterfactualReasoner,
+    LRToTargetGeneDecoder,
+    MechanosensitivePathwayModule,
+)
 
 
 class GRAILHeart(nn.Module):
@@ -31,6 +47,11 @@ class GRAILHeart(nn.Module):
     2. Spatial Position Encoder: Sinusoidal encoding for spatial coordinates
     3. Graph Attention Network: Multi-head attention over cell graph
     4. Multi-Task Predictor: L-R scoring, cell typing, expression reconstruction
+    5. Inverse Modelling: Infer causal L-R signals from observed fates (NEW)
+    
+    Forward vs Inverse Modelling:
+    - FORWARD: Expression + Spatial → L-R predictions, cell fates
+    - INVERSE: Observed fate/phenotype → Inferred causal L-R signals
     
     Args:
         n_genes: Number of input genes
@@ -46,6 +67,9 @@ class GRAILHeart(nn.Module):
         use_variational: Whether to use variational encoder
         tasks: List of prediction tasks
         decoder_type: Type of gene expression decoder ('basic', 'improved', 'zinb')
+        use_inverse_modelling: Whether to enable inverse modelling (NEW)
+        n_fates: Number of cell fate categories for inverse modelling
+        n_pathways: Number of signaling pathways for inverse modelling
     """
     
     def __init__(
@@ -63,6 +87,11 @@ class GRAILHeart(nn.Module):
         use_variational: bool = False,
         tasks: List[str] = ['lr', 'reconstruction'],
         decoder_type: str = 'residual',  # 'basic', 'improved', 'residual', or 'zinb'
+        # NEW: Inverse modelling parameters
+        use_inverse_modelling: bool = True,
+        n_fates: Optional[int] = None,
+        n_pathways: int = 20,
+        n_mechano_pathways: int = 8,
     ):
         super().__init__()
         
@@ -72,6 +101,7 @@ class GRAILHeart(nn.Module):
         self.use_variational = use_variational
         self.tasks = tasks
         self.decoder_type = decoder_type
+        self.use_inverse_modelling = use_inverse_modelling
         
         # Gene Expression Encoder
         if use_variational:
@@ -116,7 +146,7 @@ class GRAILHeart(nn.Module):
             jk='cat',  # Jumping knowledge
         )
         
-        # Multi-task prediction head
+        # Multi-task prediction head (FORWARD modelling)
         self.predictor = MultiTaskHead(
             hidden_dim=hidden_dim,
             n_genes=n_genes,
@@ -125,6 +155,22 @@ class GRAILHeart(nn.Module):
             tasks=tasks,
             decoder_type=decoder_type,
         )
+        
+        # INVERSE MODELLING MODULE (NEW)
+        # Implements the abstract's claim: "inverse modelling framework to elucidate
+        # mechanosensitive pathways that modulate early-stage cardiac tissue patterning"
+        self.inverse_module = None
+        if use_inverse_modelling:
+            # Determine number of fates from cell types or default
+            actual_n_fates = n_fates if n_fates is not None else (n_cell_types if n_cell_types is not None else 10)
+            
+            self.inverse_module = InverseSignalInference(
+                hidden_dim=hidden_dim,
+                n_genes=n_genes,
+                n_fates=actual_n_fates,
+                n_pathways=n_pathways,
+                n_mechano_pathways=n_mechano_pathways,
+            )
         
         # Variational KL loss weight
         self.kl_weight = 0.001
@@ -162,9 +208,10 @@ class GRAILHeart(nn.Module):
         self,
         data: Union[Data, Batch],
         return_embeddings: bool = False,
+        run_inverse: bool = True,
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass through GRAIL-Heart.
+        Forward pass through GRAIL-Heart (both forward and inverse modelling).
         
         Args:
             data: PyG Data object with:
@@ -175,9 +222,24 @@ class GRAILHeart(nn.Module):
                 - edge_type: Edge types [E] (optional)
                 - edge_weight: Edge weights [E] (optional)
             return_embeddings: Whether to return intermediate embeddings
+            run_inverse: Whether to run inverse modelling (default: True)
             
         Returns:
-            Dictionary with predictions and optional embeddings
+            Dictionary with predictions and optional embeddings including:
+            
+            FORWARD MODELLING OUTPUTS:
+                - lr_scores: L-R interaction predictions [E]
+                - reconstruction: Reconstructed expression [N, n_genes]
+                - node_embeddings: Cell embeddings [N, hidden_dim]
+                
+            INVERSE MODELLING OUTPUTS (if enabled):
+                - fate_logits: Cell fate predictions [N, n_fates]
+                - fate_trajectory: Continuous fate embedding [N, fate_dim]
+                - differentiation_score: Differentiation progress [N, 1]
+                - causal_lr_scores: Causal importance of each L-R [E]
+                - pathway_activation: Signaling pathway activations [E, n_pathways]
+                - target_gene_effects: Effect of L-R on genes [E, n_genes]
+                - mechano_pathway_activation: Mechanosensitive pathway activity [E, n_mechano]
         """
         x = data.x
         edge_index = data.edge_index
@@ -204,6 +266,7 @@ class GRAILHeart(nn.Module):
         if pos is not None:
             spatial_dist = torch.cdist(pos, pos)
             
+        # ===== FORWARD MODELLING =====
         # Multi-task predictions (pass original expression for residual decoder)
         outputs = self.predictor(z_gat, edge_index, spatial_dist, x_original=x)
         
@@ -214,12 +277,92 @@ class GRAILHeart(nn.Module):
         if kl_loss is not None:
             outputs['kl_loss'] = kl_loss * self.kl_weight
             
+        # ===== INVERSE MODELLING =====
+        # "This inverse modelling framework will also elucidate mechanosensitive 
+        # pathways that modulate early-stage cardiac tissue patterning"
+        if self.inverse_module is not None and run_inverse and 'lr_scores' in outputs:
+            try:
+                inverse_outputs = self.inverse_module(
+                    z=z_gat,
+                    edge_index=edge_index,
+                    lr_scores=torch.sigmoid(outputs['lr_scores']),
+                    expression=x,
+                    spatial_coords=pos,
+                )
+                
+                # Add inverse modelling outputs with 'inverse_' prefix for clarity
+                outputs['fate_logits'] = inverse_outputs['fate_logits']
+                outputs['fate_trajectory'] = inverse_outputs['fate_trajectory']
+                outputs['differentiation_score'] = inverse_outputs['differentiation_score']
+                outputs['causal_lr_scores'] = inverse_outputs['causal_lr_scores']
+                outputs['pathway_activation'] = inverse_outputs['pathway_activation']
+                outputs['target_gene_effects'] = inverse_outputs['target_gene_effects']
+                outputs['mechano_pathway_activation'] = inverse_outputs['mechano_pathway_activation']
+                outputs['mechano_differentiation_effect'] = inverse_outputs['mechano_differentiation_effect']
+                outputs['fate_representation'] = inverse_outputs['fate_representation']
+                
+                if 'predicted_expression_from_lr' in inverse_outputs:
+                    outputs['predicted_expression_from_lr'] = inverse_outputs['predicted_expression_from_lr']
+                    outputs['delta_expression'] = inverse_outputs['delta_expression']
+            except Exception as e:
+                # Log but don't fail if inverse modelling has issues
+                import warnings
+                warnings.warn(f"Inverse modelling failed: {e}")
+            
         # Optionally return additional embeddings
         if return_embeddings:
             outputs['z_initial'] = z
             outputs['z_gat'] = z_gat
             
         return outputs
+    
+    def infer_causal_signals(
+        self,
+        data: Data,
+        observed_fate: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        INVERSE INFERENCE: Given observed data, infer causal L-R signals.
+        
+        This is the core inverse modelling function that answers:
+        "What L-R signals caused this differentiation pattern?"
+        
+        Args:
+            data: PyG Data object with expression and spatial info
+            observed_fate: Optional observed fate labels [N, n_fates]
+                          If not provided, uses predicted fates
+                          
+        Returns:
+            Dictionary with:
+                - inferred_lr_importance: Importance of each L-R edge [E]
+                - causal_pathways: Which pathways are causally important
+                - mechano_importance: Mechanosensitive pathway importance
+        """
+        if self.inverse_module is None:
+            raise ValueError("Inverse modelling not enabled. Set use_inverse_modelling=True")
+            
+        # Run forward pass first to get embeddings and L-R scores
+        outputs = self.forward(data, run_inverse=True)
+        
+        # If no observed fate provided, use the predicted fate
+        if observed_fate is None:
+            observed_fate = F.softmax(outputs['fate_logits'], dim=-1)
+            
+        # Run inverse inference
+        inverse_results = self.inverse_module.infer_causal_signals(
+            observed_fate=observed_fate,
+            observed_expression=data.x,
+            z=outputs['node_embeddings'],
+            edge_index=data.edge_index,
+        )
+        
+        # Combine with forward outputs for complete analysis
+        inverse_results['forward_lr_scores'] = outputs.get('lr_scores', None)
+        inverse_results['causal_lr_scores'] = outputs.get('causal_lr_scores', None)
+        inverse_results['pathway_activation'] = outputs.get('pathway_activation', None)
+        inverse_results['mechano_pathway_activation'] = outputs.get('mechano_pathway_activation', None)
+        
+        return inverse_results
     
     def predict_interactions(
         self,
@@ -346,7 +489,7 @@ def create_grail_heart(
         config: Optional configuration dictionary
         
     Returns:
-        Configured GRAIL-Heart model
+        Configured GRAIL-Heart model with forward AND inverse modelling
     """
     default_config = {
         'hidden_dim': 256,
@@ -361,6 +504,11 @@ def create_grail_heart(
         'use_variational': False,
         'tasks': ['lr', 'reconstruction'],
         'decoder_type': 'residual',
+        # Inverse modelling parameters (NEW)
+        'use_inverse_modelling': True,
+        'n_fates': None,  # Will default to n_cell_types
+        'n_pathways': 20,
+        'n_mechano_pathways': 8,
     }
     
     if config is not None:

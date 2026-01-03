@@ -247,6 +247,12 @@ def create_model(config: dict, metadata: dict) -> GRAILHeart:
     # Extract n_genes before passing to create_grail_heart
     n_genes = model_config.pop('n_genes')
     
+    # Handle inverse modelling configuration
+    if model_config.get('use_inverse_modelling', False):
+        # Use n_cell_types as n_fates if not specified
+        if model_config.get('n_fates') is None:
+            model_config['n_fates'] = metadata['n_cell_types']
+    
     model = create_grail_heart(n_genes=n_genes, config=model_config)
     
     return model
@@ -341,6 +347,12 @@ def main():
         n_cell_types=metadata['n_cell_types'],
         use_contrastive=loss_config.get('use_contrastive', True),
         recon_loss_type=loss_config.get('recon_loss_type', 'combined'),
+        # Inverse modelling loss parameters
+        use_inverse_losses=loss_config.get('use_inverse_losses', True),
+        fate_weight=loss_config.get('fate_weight', 0.5),
+        causal_weight=loss_config.get('causal_weight', 0.3),
+        differentiation_weight=loss_config.get('differentiation_weight', 0.2),
+        gene_target_weight=loss_config.get('gene_target_weight', 0.3),
     )
     
     # Create trainer
