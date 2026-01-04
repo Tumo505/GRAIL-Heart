@@ -91,12 +91,18 @@ class EnhancedInference:
         n_cell_types = config.get('n_cell_types', checkpoint.get('n_cell_types', 10))
         n_genes = config.get('n_genes', checkpoint.get('n_genes', 2000))
         
-        # Get n_lr_pairs from checkpoint - use the value from training
-        # Note: current model was trained with expanded_lr_database (397 pairs)
-        # For inference with OmniPath, we'll use the original model architecture
-        from grail_heart.data.expanded_lr_database import get_expanded_lr_database
-        lr_pairs_for_model = get_expanded_lr_database()
-        n_lr_pairs = config.get('n_lr_pairs', checkpoint.get('n_lr_pairs', len(lr_pairs_for_model)))
+        # Infer n_lr_pairs from checkpoint state dict to ensure match
+        state_dict = checkpoint['model_state_dict']
+        lr_keys = [k for k in state_dict.keys() if 'lr_projections' in k and k.endswith('.weight')]
+        if lr_keys:
+            indices = [int(k.split('.')[-2]) for k in lr_keys]
+            n_lr_pairs = max(indices) + 1
+            print(f"  Detected {n_lr_pairs} L-R pairs from checkpoint")
+        else:
+            # Fallback to expanded database
+            from grail_heart.data.expanded_lr_database import get_expanded_lr_database
+            lr_pairs_for_model = get_expanded_lr_database()
+            n_lr_pairs = config.get('n_lr_pairs', checkpoint.get('n_lr_pairs', len(lr_pairs_for_model)))
         
         # Initialize model with matching parameters
         tasks = model_config.get('tasks', ['lr', 'reconstruction', 'cell_type'])
@@ -210,7 +216,7 @@ class EnhancedInference:
             print(f"\n  Top 10 L-R interactions:")
             top10 = lr_scores.nlargest(10, 'mean_score')
             for _, row in top10.iterrows():
-                print(f"    {row['ligand']} → {row['receptor']}: "
+                print(f"    {row['ligand']} -> {row['receptor']}: "
                       f"score={row['mean_score']:.3f}, "
                       f"pathway={row['pathway']}")
         
@@ -391,12 +397,12 @@ class EnhancedInference:
                         gene_names=gene_names,
                         ligand=row['ligand'],
                         receptor=row['receptor'],
-                        title=f"{region}: {row['ligand']}→{row['receptor']} ({row['pathway']})",
+                        title=f"{region}: {row['ligand']}->{row['receptor']} ({row['pathway']})",
                         save_name=f"{region}_{row['ligand']}_{row['receptor']}"
                     )
                     plt.close()
                 except Exception as e:
-                    print(f"    Warning: Could not plot {row['ligand']}→{row['receptor']}: {e}")
+                    print(f"    Warning: Could not plot {row['ligand']}->{row['receptor']}: {e}")
     
     def run_all_regions(self) -> None:
         """Process all cardiac regions."""
@@ -557,8 +563,22 @@ def main():
     print("GRAIL-Heart Enhanced Inference Pipeline")
     print("="*60)
     
-    # Paths
-    checkpoint_path = 'outputs/checkpoints/best.pt'
+    # Find best checkpoint - prefer CV checkpoints with inverse modelling
+    import os
+    from pathlib import Path
+    cv_dirs = sorted([d for d in Path('outputs').iterdir() if d.name.startswith('cv_')])
+    if cv_dirs:
+        latest_cv = cv_dirs[-1]
+        # Use best fold checkpoint (RV typically performs best)
+        checkpoint_path = latest_cv / 'fold_4_RV' / 'checkpoints' / 'best.pt'
+        if not checkpoint_path.exists():
+            # Fallback to fold_0
+            checkpoint_path = latest_cv / 'fold_0_AX' / 'checkpoints' / 'best.pt'
+        checkpoint_path = str(checkpoint_path)
+        print(f"Using CV checkpoint: {checkpoint_path}")
+    else:
+        checkpoint_path = 'outputs/checkpoints/best.pt'
+    
     data_dir = 'data'
     output_dir = 'outputs/enhanced_analysis'
     

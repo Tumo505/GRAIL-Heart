@@ -148,12 +148,8 @@ def prepare_data(config: dict, data_dir: Path):
         # Build gene name to index mapping
         gene_to_idx = {g: idx for idx, g in enumerate(ds.gene_names)}
         
-        # Build graph with L-R edges
-        graph = graph_builder.build_graph(
-            expression=ds.expression,
-            spatial_coords=ds.spatial_coords,
-            cell_types=ds.cell_types,
-        )
+        # Build graph with L-R edges and differentiation stage
+        graph = graph_builder.build_from_dataset(ds)
         
         # Label edges as L-R (type=1) based on real L-R database
         # An edge (i,j) is an L-R edge if cell i expresses a ligand and cell j expresses its receptor

@@ -134,12 +134,8 @@ def load_region_graphs(
                 print(f"  Skipped (no spatial data)")
                 continue
                 
-            # Build graph
-            graph = graph_builder.build_graph(
-                expression=ds.expression,
-                spatial_coords=ds.spatial_coords,
-                cell_types=ds.cell_types,
-            )
+            # Build graph with differentiation stage
+            graph = graph_builder.build_from_dataset(ds)
             
             # Label L-R edges
             gene_to_idx = {g: idx for idx, g in enumerate(ds.gene_names)}

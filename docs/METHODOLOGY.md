@@ -468,6 +468,34 @@ $$\mathcal{L}_{inverse} = w_{fate}\mathcal{L}_{fate} + w_{causal}\mathcal{L}_{ca
 | $\mathcal{L}_{diff}$ | 0.2 | MSE for differentiation scores |
 | $\mathcal{L}_{gene}$ | 0.3 | Target gene prediction accuracy |
 
+### Differentiation Staging
+
+For the differentiation loss ($\mathcal{L}_{diff}$), GRAIL-Heart automatically computes differentiation staging using a hierarchical approach:
+
+#### 1. Pseudotime Analysis (Primary)
+If pseudotime has been pre-computed in the dataset (`dpt_pseudotime` in `obs`), or if neighbors are available, GRAIL-Heart computes diffusion pseudotime:
+
+```python
+# Automatic computation in datasets.py
+sc.tl.diffmap(adata)
+sc.tl.dpt(adata)
+```
+
+#### 2. Cell Type-Based Ordering (Fallback)
+When pseudotime is unavailable, GRAIL-Heart uses a cardiac-specific differentiation hierarchy:
+
+| Stage | Cell Types | Score |
+|-------|-----------|-------|
+| Progenitor | progenitor, stem | 0.1 |
+| Mesenchymal | mesenchymal, fibroblast | 0.2-0.3 |
+| Supporting | endothelial, immune, macrophage | 0.3-0.4 |
+| Smooth Muscle | SMC, pericyte | 0.5 |
+| Atrial CM | atrial, aCM | 0.7 |
+| Ventricular CM | ventricular, vCM, cardiomyocyte | 0.85-0.9 |
+| Conduction | purkinje, nodal | 1.0 |
+
+This hierarchy reflects the developmental trajectory from cardiac progenitors to terminally differentiated cells.
+
 ### Enabling Inverse Modelling
 
 ```python

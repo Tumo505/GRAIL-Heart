@@ -310,9 +310,14 @@ class GRAILHeartTrainer:
             )
             targets['lr_targets'] = labels
             
-        # Cell type targets
+        # Cell type targets (also used as cell fate target for inverse modelling)
         if hasattr(data, 'y') and data.y is not None:
             targets['cell_types'] = data.y
+            targets['cell_fate'] = data.y  # Cell fate target for inverse modelling
+            
+        # Differentiation stage targets (for inverse modelling)
+        if hasattr(data, 'differentiation_stage') and data.differentiation_stage is not None:
+            targets['differentiation_stage'] = data.differentiation_stage
             
         # Spatial distances
         if hasattr(data, 'pos') and data.pos is not None:
