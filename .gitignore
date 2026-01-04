@@ -39,7 +39,7 @@ wheels/
 *~
 
 # Model outputs and checkpoints
-outputs/
+# outputs/
 checkpoints/
 *.pt
 *.pth

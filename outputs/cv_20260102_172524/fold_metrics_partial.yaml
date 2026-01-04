@@ -1,0 +1,106 @@
+- region: AX
+  val_accuracy: 0.8477347957116743
+  val_auprc: 0.7806726519681997
+  val_auroc: 0.34076482613627845
+  val_f1: 0.9175605189247025
+  val_lr_loss: 1.7048344612121582
+  val_mae: !!python/object/apply:numpy._core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - f4
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    5t/HPQ==
+  val_mse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    sCG9PQ==
+  val_pearson_mean: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    6117Pw==
+  val_pearson_median: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    JU17Pw==
+  val_precision: !!python/object/apply:numpy._core.multiarray.scalar
+  - &id002 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    eE/ZZFor6z8=
+  val_r2: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    WMQ5Pw==
+  val_recall: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    KLUkq4Hw7z8=
+  val_recon_loss: 0.10289085656404495
+  val_rmse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    iJebPg==
+  val_total_loss: 7.7294511795043945
+- region: LA
+  val_accuracy: 0.9277079303675049
+  val_auprc: 0.9179120074815313
+  val_auroc: 0.48340168159296804
+  val_f1: 0.9624701895318187
+  val_lr_loss: 0.4751347005367279
+  val_mae: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    2YCrPQ==
+  val_mse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    IVCYPQ==
+  val_pearson_mean: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    05p8Pw==
+  val_pearson_median: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    Aa98Pw==
+  val_precision: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    I+PrwpvX7T8=
+  val_r2: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    cJY6Pw==
+  val_recall: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    Zj8RGbvR7z8=
+  val_recon_loss: 0.08219555020332336
+  val_rmse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    2aCLPg==
+  val_total_loss: 6.510998725891113

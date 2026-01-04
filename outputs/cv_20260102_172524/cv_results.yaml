@@ -1,0 +1,229 @@
+n_folds: 2
+per_fold:
+- region: AX
+  val_accuracy: 0.8477347957116743
+  val_auprc: 0.7806726519681997
+  val_auroc: 0.34076482613627845
+  val_f1: 0.9175605189247025
+  val_lr_loss: 1.7048344612121582
+  val_mae: !!python/object/apply:numpy._core.multiarray.scalar
+  - &id001 !!python/object/apply:numpy.dtype
+    args:
+    - f4
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    5t/HPQ==
+  val_mse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    sCG9PQ==
+  val_pearson_mean: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    6117Pw==
+  val_pearson_median: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    JU17Pw==
+  val_precision: !!python/object/apply:numpy._core.multiarray.scalar
+  - &id002 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - !!binary |
+    eE/ZZFor6z8=
+  val_r2: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    WMQ5Pw==
+  val_recall: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    KLUkq4Hw7z8=
+  val_recon_loss: 0.10289085656404495
+  val_rmse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    iJebPg==
+  val_total_loss: 7.7294511795043945
+- region: LA
+  val_accuracy: 0.9277079303675049
+  val_auprc: 0.9179120074815313
+  val_auroc: 0.48340168159296804
+  val_f1: 0.9624701895318187
+  val_lr_loss: 0.4751347005367279
+  val_mae: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    2YCrPQ==
+  val_mse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    IVCYPQ==
+  val_pearson_mean: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    05p8Pw==
+  val_pearson_median: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    Aa98Pw==
+  val_precision: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    I+PrwpvX7T8=
+  val_r2: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    cJY6Pw==
+  val_recall: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id002
+  - !!binary |
+    Zj8RGbvR7z8=
+  val_recon_loss: 0.08219555020332336
+  val_rmse: !!python/object/apply:numpy._core.multiarray.scalar
+  - *id001
+  - !!binary |
+    2aCLPg==
+  val_total_loss: 6.510998725891113
+summary:
+  val_accuracy:
+    max: 0.9277079303675049
+    mean: 0.8877213630395896
+    min: 0.8477347957116743
+    std: 0.03998656732791528
+    values:
+    - 0.8477347957116743
+    - 0.9277079303675049
+  val_auprc:
+    max: 0.9179120074815313
+    mean: 0.8492923297248656
+    min: 0.7806726519681997
+    std: 0.06861967775666583
+    values:
+    - 0.7806726519681997
+    - 0.9179120074815313
+  val_auroc:
+    max: 0.48340168159296804
+    mean: 0.41208325386462324
+    min: 0.34076482613627845
+    std: 0.07131842772834479
+    values:
+    - 0.34076482613627845
+    - 0.48340168159296804
+  val_f1:
+    max: 0.9624701895318187
+    mean: 0.9400153542282605
+    min: 0.9175605189247025
+    std: 0.02245483530355813
+    values:
+    - 0.9175605189247025
+    - 0.9624701895318187
+  val_lr_loss:
+    max: 1.7048344612121582
+    mean: 1.089984580874443
+    min: 0.4751347005367279
+    std: 0.6148498803377151
+    values:
+    - 1.7048344612121582
+    - 0.4751347005367279
+  val_mae:
+    max: 0.09759502112865448
+    mean: 0.090668436139822
+    min: 0.08374185115098953
+    std: 0.006926584988832474
+    values:
+    - 0.09759502112865448
+    - 0.08374185115098953
+  val_mse:
+    max: 0.09234941005706787
+    mean: 0.08336049690842628
+    min: 0.0743715837597847
+    std: 0.008988913148641586
+    values:
+    - 0.09234941005706787
+    - 0.0743715837597847
+  val_pearson_mean:
+    max: 0.9867374300956726
+    mean: 0.9843196272850037
+    min: 0.9819018244743347
+    std: 0.0024178028106689453
+    values:
+    - 0.9819018244743347
+    - 0.9867374300956726
+  val_pearson_median:
+    max: 0.9870453476905823
+    mean: 0.9843456149101257
+    min: 0.9816458821296692
+    std: 0.002699732780456543
+    values:
+    - 0.9816458821296692
+    - 0.9870453476905823
+  val_precision:
+    max: 0.9325693900164861
+    mean: 0.8908057583219404
+    min: 0.8490421266273946
+    std: 0.04176363169454572
+    values:
+    - 0.8490421266273946
+    - 0.9325693900164861
+  val_r2:
+    max: 0.7288579940795898
+    mean: 0.72725510597229
+    min: 0.7256522178649902
+    std: 0.0016028881072998047
+    values:
+    - 0.7256522178649902
+    - 0.7288579940795898
+  val_recall:
+    max: 0.998108705772812
+    mean: 0.9962303081627589
+    min: 0.9943519105527059
+    std: 0.0018783976100530397
+    values:
+    - 0.998108705772812
+    - 0.9943519105527059
+  val_recon_loss:
+    max: 0.10289085656404495
+    mean: 0.09254320338368416
+    min: 0.08219555020332336
+    std: 0.010347653180360794
+    values:
+    - 0.10289085656404495
+    - 0.08219555020332336
+  val_rmse:
+    max: 0.3038904666900635
+    mean: 0.2883010059595108
+    min: 0.27271154522895813
+    std: 0.015589460730552673
+    values:
+    - 0.3038904666900635
+    - 0.27271154522895813
+  val_total_loss:
+    max: 7.7294511795043945
+    mean: 7.120224952697754
+    min: 6.510998725891113
+    std: 0.6092262268066406
+    values:
+    - 7.7294511795043945
+    - 6.510998725891113

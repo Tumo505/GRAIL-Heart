@@ -1,0 +1,89 @@
+============================================================
+GRAIL-Heart Enhanced Analysis Report
+TRUE INVERSE MODELLING ANALYSIS
+============================================================
+
+Model Configuration:
+----------------------------------------
+  Inverse modelling enabled: True
+  Model loaded: True
+  Device: cuda
+  Inverse module present: True
+
+Overall Statistics:
+----------------------------------------
+  Total cells analyzed: 42,654
+  Total L-R pairs in database: 22234
+  Total interactions detected: 3482
+
+Causal Analysis Summary:
+----------------------------------------
+  Regions with causal scores: 6
+  AX: causal_scores range [0.040, 1.000]
+  LA: causal_scores range [0.035, 1.000]
+  LV: causal_scores range [0.030, 1.000]
+  RA: causal_scores range [0.022, 1.000]
+  RV: causal_scores range [0.022, 1.000]
+  SP: causal_scores range [0.028, 1.000]
+
+Per-region summary:
+----------------------------------------
+  AX:
+    Cells: 6,497
+    Edges: 102,908
+    L-R pairs matched: 556
+    Interactions detected: 556
+    Top causal interactions:
+      TIMP1->MMP2: 1.869
+      FBLN1->FN1: 1.815
+      A2M->MMP2: 1.742
+  LA:
+    Cells: 5,822
+    Edges: 94,510
+    L-R pairs matched: 511
+    Interactions detected: 511
+    Top causal interactions:
+      SERPING1->C1S: 1.834
+      SERPING1->C1R: 1.797
+      TIMP1->MMP2: 1.773
+  LV:
+    Cells: 9,626
+    Edges: 154,214
+    L-R pairs matched: 614
+    Interactions detected: 614
+    Top causal interactions:
+      CFD->C3: 1.857
+      DCN->LRP1: 1.745
+      MMP2->DCN: 1.728
+  RA:
+    Cells: 7,027
+    Edges: 113,616
+    L-R pairs matched: 522
+    Interactions detected: 522
+    Top causal interactions:
+      TIMP2->MMP2: 1.831
+      SERPING1->C1S: 1.758
+      TIMP3->MMP2: 1.749
+  RV:
+    Cells: 5,039
+    Edges: 80,244
+    L-R pairs matched: 663
+    Interactions detected: 663
+    Top causal interactions:
+      TIMP1->MMP2: 1.844
+      C1QB->LRP1: 1.838
+      THBS1->LRP1: 1.821
+  SP:
+    Cells: 8,643
+    Edges: 137,456
+    L-R pairs matched: 616
+    Interactions detected: 616
+    Top causal interactions:
+      THBS1->FN1: 1.818
+      FBLN1->FN1: 1.803
+      COL1A2->ITGA5: 1.785
+
+Files saved to:
+  Tables: outputs\enhanced_analysis\tables
+  Figures: outputs\enhanced_analysis\figures
+  Causal: outputs\enhanced_analysis\causal_analysis

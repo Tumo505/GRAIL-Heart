@@ -516,15 +516,55 @@ model = GRAILHeart(
 ### Running Inverse Analysis
 
 ```bash
-# Run inverse modelling analysis
+# Run enhanced inference (recommended)
+python enhanced_inference.py
+
+# Or run basic inverse inference
 python inverse_inference.py
 ```
 
-Outputs to `outputs/inverse_analysis/`:
-- `causal_analysis/`: Causal L-R rankings per region
-- `fate_prediction/`: Cell fate trajectories
-- `mechanobiology/`: Mechanosensitive pathway activations
-- `figures/`: Visualizations
+#### Enhanced Inference Outputs
+
+The `enhanced_inference.py` script generates comprehensive analysis to `outputs/enhanced_analysis/`:
+
+```
+outputs/enhanced_analysis/
+├── analysis_report.txt      # Summary statistics and top causal interactions
+├── tables/
+│   ├── cross_region_comparison.csv   # L-R scores across all regions
+│   ├── {region}_lr_scores.csv        # Per-region L-R rankings
+├── figures/
+│   ├── cross_region_lr_heatmap.png   # Cross-region comparison
+│   ├── region_comparison_panels.png  # Multi-panel overview
+│   ├── network_summary_dashboard.png # Summary dashboard
+│   ├── {region}_spatial_network.png  # Spatial network layout
+│   ├── {region}_lr_heatmap.png       # L-R heatmap
+│   ├── {region}_pathway_activity.png # Pathway activity bars
+│   └── {region}_{ligand}_{receptor}.png  # Top interaction visualizations (56 total)
+├── causal_analysis/         # NEW: Inverse modelling outputs
+│   └── {region}_causal_edges.csv     # Per-edge causal scores
+└── networks/                # Network files (JSON/GraphML)
+```
+
+#### Causal Analysis Output Format
+
+Each `{region}_causal_edges.csv` contains:
+| Column | Description |
+|--------|-------------|
+| `edge_idx` | Edge index in the spatial graph |
+| `causal_score` | Score [0,1] indicating causal importance for cell fate |
+
+High causal scores (>0.8) indicate L-R interactions that are causally responsible for driving cell differentiation, not just co-expressed.
+
+#### Key Metrics from Enhanced Inference
+
+| Metric | Description |
+|--------|-------------|
+| `mean_score` | Average L-R interaction score across cells |
+| `max_score` | Maximum interaction score (strongest signal) |
+| `total_score` | Sum of all interaction scores |
+| `n_interactions` | Number of cell pairs with this interaction |
+| `pct_edges` | Percentage of edges showing interaction |
 
 ---
 

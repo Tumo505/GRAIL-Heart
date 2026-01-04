@@ -39,23 +39,23 @@ GRAIL-Heart was evaluated using 6-fold Leave-One-Region-Out cross-validation:
 
 | Metric | Mean | ± Std | Interpretation |
 |--------|------|-------|----------------|
-| **Reconstruction R²** | 0.885 | 0.105 | Excellent gene expression reconstruction |
+| **Reconstruction R²** | 0.885 | 0.114 | Excellent gene expression reconstruction |
 | **Pearson Correlation** | 0.991 | 0.005 | Near-perfect correlation |
-| **L-R AUROC** | 0.745 | 0.221 | Good L-R prediction |
-| **L-R AUPRC** | 0.970 | 0.030 | Excellent precision-recall |
-| **Accuracy** | 0.925 | 0.061 | Very high classification accuracy |
-| **F1 Score** | 0.958 | 0.036 | Excellent balance |
+| **L-R AUROC** | 0.786 | 0.202 | Good L-R prediction (↑4.6% with inverse modelling) |
+| **L-R AUPRC** | 0.974 | 0.030 | Excellent precision-recall |
+| **Accuracy** | 0.927 | 0.059 | Very high classification accuracy |
+| **F1 Score** | 0.959 | 0.035 | Excellent balance |
 
 ### Per-Region Performance
 
-| Region | R² | AUROC | AUPRC |
-|--------|-----|-------|-------|
-| RV (Right Ventricle) | 0.962 | **0.985** | 0.9998 |
-| LA (Left Atrium) | 0.952 | 0.896 | 0.987 |
-| AX (Apex) | 0.966 | 0.882 | 0.977 |
-| LV (Left Ventricle) | 0.956 | 0.826 | 0.948 |
-| RA (Right Atrium) | 0.737 | 0.423 | 0.915 |
-| SP (Septum) | 0.736 | 0.456 | 0.995 |
+| Region | R² | AUROC | AUPRC | Top Causal L-R |
+|--------|-----|-------|-------|----------------|
+| RV (Right Ventricle) | 0.968 | **0.984** | 0.999 | TIMP1→MMP2 (1.844) |
+| LA (Left Atrium) | 0.960 | 0.938 | 0.993 | SERPING1→C1S (1.834) |
+| AX (Apex) | 0.965 | 0.888 | 0.979 | TIMP1→MMP2 (1.869) |
+| LV (Left Ventricle) | **0.969** | 0.861 | 0.962 | CFD→C3 (1.857) |
+| RA (Right Atrium) | 0.727 | 0.408 | 0.914 | TIMP2→MMP2 (1.831) |
+| SP (Septum) | 0.720 | 0.634 | **0.997** | THBS1→FN1 (1.818) |
 
 ## Project Structure
 
@@ -301,6 +301,19 @@ This generates:
 - **Cell Fate Trajectories**: Differentiation predictions per cell
 - **Network Visualizations**: Causal signalling network graphs
 
+**Enhanced Inference Results:**
+
+Top causal L-R interactions identified across all cardiac regions:
+
+| Region | Top Causal Interaction | Causal Score | Pathway |
+|--------|------------------------|--------------|---------|
+| AX | TIMP1→MMP2 | **1.869** | ECM Regulator |
+| LA | SERPING1→C1S | **1.834** | Complement |
+| LV | CFD→C3 | **1.857** | Complement |
+| RA | TIMP2→MMP2 | **1.831** | ECM Regulator |
+| RV | TIMP1→MMP2 | **1.844** | ECM Regulator |
+| SP | THBS1→FN1 | **1.818** | ECM |
+
 ```python
 # Programmatic inverse inference
 from grail_heart.models import GRAILHeart
@@ -418,6 +431,7 @@ outputs/cv_TIMESTAMP/
 
 ```
 outputs/enhanced_analysis/
+├── analysis_report.txt      # Summary with causal analysis
 ├── tables/
 │   ├── AX_lr_scores.csv
 │   ├── LA_lr_scores.csv
@@ -427,10 +441,13 @@ outputs/enhanced_analysis/
 │   ├── AX_spatial_network.png
 │   ├── AX_lr_heatmap.png
 │   ├── AX_pathway_activity.png
-│   ├── ... (multiple per region)
+│   ├── ... (multiple per region, 56 interaction figures total)
 │   ├── cross_region_lr_heatmap.png
 │   ├── region_comparison_panels.png
 │   └── network_summary_dashboard.png
+├── causal_analysis/         # Inverse modelling outputs
+│   ├── AX_causal_edges.csv  # Per-edge causal scores
+│   └── ... (one per region)
 └── networks/
     ├── AX_network.json
     └── ... (one per region)
@@ -509,5 +526,3 @@ If you use GRAIL-Heart in your research, please cite:
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
 
 ---
-
-*Last updated: January 2026*
