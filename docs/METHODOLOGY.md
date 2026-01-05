@@ -35,9 +35,9 @@ The framework enables comprehensive analysis of cell-cell communication patterns
 
 ## Data Sources and Preprocessing
 
-### Primary Dataset: Heart Cell Atlas v2
+### Primary Dataset: [Heart Cell Atlas v2](https://www.heartcellatlas.org/)
 
-We utilized spatial transcriptomics data from the Heart Cell Atlas v2, comprising Visium datasets from six distinct cardiac regions:
+We utilized spatial transcriptomics data from the [Heart Cell Atlas v2](https://www.heartcellatlas.org/), comprising Visium datasets from six distinct cardiac regions:
 
 | Region | Abbreviation | Cells | Description |
 |--------|--------------|-------|-------------|
@@ -833,7 +833,7 @@ Final metrics are reported as **mean ± std** across all 6 folds.
 
 ## References
 
-1. Heart Cell Atlas v2 - Spatial Transcriptomics
+1. [Heart Cell Atlas v2](https://www.heartcellatlas.org/) - Spatial Transcriptomics
 2. Graph Attention Networks (Veličković et al., 2018)
 3. OmniPath - Integrated L-R Database (Türei et al., 2021)
 4. CellChat - Cell-Cell Communication Analysis (Jin et al., 2021)

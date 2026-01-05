@@ -84,7 +84,7 @@ The latest cross validation run includes differentiation staging supervision:
 
 ### Dataset Overview
 
-Analysis was performed across all six cardiac regions from the Heart Cell Atlas v2:
+Analysis was performed across all six cardiac regions from the [Heart Cell Atlas v2](https://www.heartcellatlas.org/):
 
 | Region | Cells | Edges | L-R Pairs Matched | Cell Types |
 |--------|-------|-------|-------------------|------------|
