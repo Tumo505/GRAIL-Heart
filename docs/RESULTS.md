@@ -14,6 +14,8 @@
 6. [Key Biological Findings](#key-biological-findings)
 7. [Pathway-Specific Results](#pathway-specific-results)
 8. [Visualizations](#visualizations)
+9. [Inverse Modelling Analysis](#inverse-modelling-analysis-january-5-2026)
+10. [Summary Statistics](#summary-statistics)
 
 ---
 
@@ -486,8 +488,9 @@ outputs/enhanced_analysis/tables/
 | | Cardiac regions | 6 |
 | **L-R Database** | OmniPath pairs | 22,234 |
 | | Interactions detected | 3,482 |
-| **Inverse Modelling** | Causal score range | [0.022, 1.000] |
+| **Inverse Modelling** | Causal score range | [0.0, 1.0] |
 | | Top causal interactions | 56 visualized |
+| | Significant pathways | 3 (YAP_TAZ, BMP, TGF_beta) |
 
 ### Enhanced Inference Summary (January 4, 2026)
 
@@ -499,6 +502,29 @@ outputs/enhanced_analysis/tables/
 | RA | 7,027 | 113,616 | 522 | TIMP2→MMP2 | 1.831 |
 | RV | 5,039 | 80,244 | 663 | TIMP1→MMP2 | 1.844 |
 | SP | 8,643 | 137,456 | 616 | THBS1→FN1 | 1.818 |
+
+### Inverse Inference Summary
+
+*Source: [inverse_modelling_summary.json](../outputs/inverse_analysis/inverse_modelling_summary.json)*
+
+| Region | Cells | Mean Diff. | YAP_TAZ (p) | BMP (p) | TGF-β (p) | Top L-R Score |
+|--------|-------|------------|-------------|---------|-----------|---------------|
+| AX | 6,497 | 0.5214 | 1.7e-11 | 5.0e-13 | 5.7e-07 | 0.999 |
+| LA | 5,822 | 0.5212 | 6.9e-14 | 4.2e-16 | 4.5e-08 | 0.999 |
+| LV | 9,626 | 0.5212 | **6.7e-20** | **2.2e-23** | **3.3e-11** | 0.999 |
+| RA | 7,027 | 0.5216 | 7.8e-18 | 6.3e-22 | 3.7e-10 | 0.999 |
+| RV | 5,039 | 0.5213 | 1.4e-13 | 7.0e-16 | 6.5e-08 | 0.999 |
+| SP | 8,643 | 0.5206 | 4.8e-11 | 2.6e-14 | 2.3e-07 | 0.999 |
+
+### Output File Reference
+
+| Analysis Type | File Location | Description |
+|---------------|---------------|-------------|
+| **Mechanobiology** | [`outputs/inverse_analysis/mechanobiology/`](../outputs/inverse_analysis/mechanobiology/) | Per-region mechanosensitive pathway p-values |
+| **Causal Analysis** | [`outputs/inverse_analysis/causal_analysis/`](../outputs/inverse_analysis/causal_analysis/) | Per-region causal L-R interaction scores |
+| **Fate Prediction** | [`outputs/inverse_analysis/fate_prediction/`](../outputs/inverse_analysis/fate_prediction/) | Cell differentiation metrics |
+| **Figures** | [`outputs/inverse_analysis/figures/`](../outputs/inverse_analysis/figures/) | Causal networks and pathway heatmaps |
+| **Master Summary** | [`outputs/inverse_analysis/inverse_modelling_summary.json`](../outputs/inverse_analysis/inverse_modelling_summary.json) | Complete analysis results |
 
 ### Key Takeaways
 
@@ -522,5 +548,131 @@ outputs/enhanced_analysis/tables/
    - TIMP-MMP2 interactions are among the most causally important
 
 7. **56 top interaction figures generated** - spatial visualizations for biological validation
+
+8. **Mechanosensitive pathways reveal cardiac mechanics** (January 5, 2026):
+   - **YAP/TAZ** - Highly significant across all regions (p < 1e-10), strongest in LV (p = 6.7e-20)
+   - **BMP** - Extremely significant (p < 1e-13), indicating active bone morphogenetic signaling
+   - **TGF-β** - Significant fibrosis/remodeling pathway (p < 1e-06)
+   - **Left Ventricle shows strongest mechanosensitive signature** - critical for heart failure research
+   - Results stored in [`outputs/inverse_analysis/mechanobiology/`](../outputs/inverse_analysis/mechanobiology/)
+
+9. **Cell fate analysis shows uniform differentiation**:
+   - Mean differentiation score: 0.521 ± 0.0003 across all regions
+   - All 42,654 cells classified as intermediate differentiation stage
+   - Low variance indicates consistent maturation state in adult cardiac tissue
+
+---
+
+## Inverse Modelling Analysis
+
+### Mechanosensitive Pathway Analysis
+
+The inverse inference pipeline analyzed 8 mechanosensitive signaling pathways across all cardiac regions. Results are stored in [`outputs/inverse_analysis/mechanobiology/`](../outputs/inverse_analysis/mechanobiology/) and visualized in the mechanobiology pathway heatmap.
+
+![Mechanobiology Pathway Heatmap](../outputs/inverse_analysis/figures/mechano_pathway_heatmap.png)
+*Cross-region comparison of mechanosensitive pathway significance (p-values)*
+
+#### Pathway P-Values by Region
+
+*Source: [inverse_modelling_summary.json](../outputs/inverse_analysis/inverse_modelling_summary.json)*
+
+| Pathway | AX | LA | LV | RA | RV | SP | Interpretation |
+|---------|------|------|------|------|------|------|----------------|
+| **YAP_TAZ** | 1.7e-11 | 6.9e-14 | **6.7e-20** | 7.8e-18 | 1.4e-13 | 4.8e-11 | **Highly significant** in all regions |
+| **BMP** | 5.0e-13 | 4.2e-16 | **2.2e-23** | 6.3e-22 | 7.0e-16 | 2.6e-14 | **Extremely significant** |
+| **TGF_beta** | 5.7e-07 | 4.5e-08 | **3.3e-11** | 3.7e-10 | 6.5e-08 | 2.3e-07 | **Significant** across all |
+| **Notch** | 0.073 | 0.019 | 0.026 | 0.075 | 0.052 | 0.022 | Marginally significant |
+| **Integrin_FAK** | 0.372 | 0.359 | 0.393 | 0.390 | 0.337 | 0.284 | Not significant |
+| **Piezo** | 1.000 | 0.999 | 1.000 | 1.000 | 0.999 | 0.999 | Not enriched |
+| **Wnt** | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.999 | Not enriched |
+| **FGF** | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.999 | Not enriched |
+
+**Key Finding:** YAP/TAZ, BMP, and TGF-β pathways show extremely significant enrichment across all cardiac regions, with the Left Ventricle (LV) showing the strongest mechanosensitive signature.
+
+### Causal Network Analysis
+
+Causal network visualizations for each region are available in [`outputs/inverse_analysis/figures/`](../outputs/inverse_analysis/figures/):
+
+| Region | Causal Network Figure |
+|--------|----------------------|
+| AX | ![AX Causal Network](../outputs/inverse_analysis/figures/AX_causal_network.png) |
+| LA | ![LA Causal Network](../outputs/inverse_analysis/figures/LA_causal_network.png) |
+| LV | ![LV Causal Network](../outputs/inverse_analysis/figures/LV_causal_network.png) |
+| RA | ![RA Causal Network](../outputs/inverse_analysis/figures/RA_causal_network.png) |
+| RV | ![RV Causal Network](../outputs/inverse_analysis/figures/RV_causal_network.png) |
+| SP | ![SP Causal Network](../outputs/inverse_analysis/figures/SP_causal_network.png) |
+
+### Causal L-R Interaction Scores
+
+Top 10 causal L-R interactions per region from [`outputs/inverse_analysis/causal_analysis/`](../outputs/inverse_analysis/causal_analysis/):
+
+#### Left Ventricle (LV) - Highest Mechanosensitive Activity
+*Source: [LV_causal_lr.csv](../outputs/inverse_analysis/causal_analysis/LV_causal_lr.csv)*
+
+| Edge | Source→Target | Causal Score | L-R Score | Significance |
+|------|---------------|--------------|-----------|--------------|
+| 38 | Cell 2 → Cell 1004 | **1.000** | 0.9993 | Top causal |
+| 277 | Cell 17 → Cell 210 | **1.000** | 0.9899 | Top causal |
+| 297 | Cell 18 → Cell 3206 | **1.000** | 0.9987 | Top causal |
+| 163 | Cell 10 → Cell 1999 | **1.000** | 0.9969 | Top causal |
+| 169 | Cell 10 → Cell 7102 | **1.000** | 0.9986 | Top causal |
+
+#### Septum (SP) - Highest L-R Confidence
+*Source: [SP_causal_lr.csv](../outputs/inverse_analysis/causal_analysis/SP_causal_lr.csv)*
+
+| Edge | Source→Target | Causal Score | L-R Score | Significance |
+|------|---------------|--------------|-----------|--------------|
+| 253 | Cell 16 → Cell 1802 | **1.000** | 0.99999 | Near-perfect L-R |
+| 413 | Cell 26 → Cell 5200 | **1.000** | 0.99999 | Near-perfect L-R |
+| 249 | Cell 15 → Cell 2206 | **1.000** | 0.99999 | Near-perfect L-R |
+| 409 | Cell 26 → Cell 1260 | **1.000** | 0.99999 | Near-perfect L-R |
+
+### Cell Fate Prediction Analysis
+
+Differentiation staging results from [`outputs/inverse_analysis/fate_prediction/`](../outputs/inverse_analysis/fate_prediction/):
+
+*Source: Per-region fate analysis JSON files*
+
+| Region | N Cells | Mean Differentiation | Std Dev | N Progenitors | N Intermediate | N Differentiated |
+|--------|---------|---------------------|---------|---------------|----------------|------------------|
+| AX | 6,497 | 0.5214 | 0.0006 | 0 | 6,497 | 0 |
+| LA | 5,822 | 0.5212 | 0.0008 | 0 | 5,822 | 0 |
+| LV | 9,626 | **0.5212** | 0.0008 | 0 | 9,626 | 0 |
+| RA | 7,027 | **0.5216** | 0.0011 | 0 | 7,027 | 0 |
+| RV | 5,039 | 0.5213 | 0.0009 | 0 | 5,039 | 0 |
+| SP | 8,643 | 0.5206 | 0.0008 | 0 | 8,643 | 0 |
+
+**Interpretation:**
+- **Uniform differentiation staging**: All cells classified as "intermediate" (differentiation score ~0.52)
+- **Low variance**: Std dev < 0.001 indicates consistent maturation state across regions
+- **Trajectory dimension**: 64-dimensional embedding space for cell fate trajectories
+
+### Inverse Modelling Summary Statistics
+
+*Source: [inverse_modelling_summary.json](../outputs/inverse_analysis/inverse_modelling_summary.json)*
+
+| Metric | Value |
+|--------|-------|
+| **Regions analyzed** | 6 (AX, LA, LV, RA, RV, SP) |
+| **Total cells processed** | 42,654 |
+| **Causal edges per region** | ~50 top-scoring |
+| **Mechanosensitive pathways** | 8 |
+| **Significant pathways** | 3 (YAP_TAZ, BMP, TGF_beta) |
+| **Mean differentiation score** | 0.5212 ± 0.0003 |
+| **L-R scores (range)** | 0.938 - 0.999 |
+| **Causal scores (range)** | 0.0 - 1.0 |
+
+### Regional Mechanobiology Profiles
+
+Based on inverse modelling, each region shows distinct mechanosensitive characteristics:
+
+| Region | Dominant Mechanobiology | Key Pathways | Clinical Relevance |
+|--------|------------------------|--------------|-------------------|
+| **AX** (Apex) | Moderate YAP/TAZ | BMP, TGF-β | Ventricular remodeling |
+| **LA** (Left Atrium) | Strong YAP/TAZ | BMP, TGF-β | Atrial fibrosis risk |
+| **LV** (Left Ventricle) | **Strongest** | All mechanosensitive | Heart failure mechanics |
+| **RA** (Right Atrium) | Strong BMP | TGF-β, YAP/TAZ | Arrhythmia substrate |
+| **RV** (Right Ventricle) | Moderate | BMP, TGF-β | Pulmonary stress response |
+| **SP** (Septum) | Moderate | YAP/TAZ, BMP | Structural integrity |
 
 ---

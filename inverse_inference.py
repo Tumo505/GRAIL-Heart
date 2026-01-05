@@ -153,6 +153,88 @@ class InverseModellingAnalysis:
         print(f"Loaded {region}: {adata.n_obs} cells, {adata.n_vars} genes")
         
         return adata
+    
+    def _build_pyg_data_from_adata(self, adata, k: int = 15, max_genes: int = 2000):
+        """
+        Build PyTorch Geometric Data object from AnnData.
+        
+        Args:
+            adata: AnnData object with expression and spatial coordinates
+            k: Number of neighbors for kNN graph
+            max_genes: Maximum number of highly variable genes to use
+            
+        Returns:
+            PyTorch Geometric Data object
+        """
+        import scanpy as sc
+        from sklearn.neighbors import kneighbors_graph
+        from torch_geometric.data import Data
+        
+        # Preprocess if needed
+        adata_proc = adata.copy()
+        
+        # Normalize
+        sc.pp.normalize_total(adata_proc, target_sum=1e4)
+        sc.pp.log1p(adata_proc)
+        
+        # Select highly variable genes
+        if adata_proc.n_vars > max_genes:
+            sc.pp.highly_variable_genes(adata_proc, n_top_genes=max_genes, flavor='seurat_v3')
+            adata_proc = adata_proc[:, adata_proc.var.highly_variable]
+        
+        # Get expression matrix
+        if hasattr(adata_proc.X, 'toarray'):
+            expression = torch.tensor(adata_proc.X.toarray(), dtype=torch.float32)
+        else:
+            expression = torch.tensor(np.array(adata_proc.X), dtype=torch.float32)
+        
+        # Get spatial coordinates
+        if 'spatial' in adata_proc.obsm:
+            coords = adata_proc.obsm['spatial']
+        elif 'X_spatial' in adata_proc.obsm:
+            coords = adata_proc.obsm['X_spatial']
+        else:
+            raise ValueError("No spatial coordinates found in adata.obsm")
+        
+        coords = np.array(coords)
+        
+        # Build kNN graph
+        adj = kneighbors_graph(coords, n_neighbors=k, mode='connectivity')
+        adj = adj + adj.T  # Make symmetric
+        adj.data = np.ones_like(adj.data)  # Binary edges
+        
+        # Convert to edge index
+        coo = adj.tocoo()
+        edge_index = torch.tensor(np.vstack([coo.row, coo.col]), dtype=torch.long)
+        
+        # Create PyG Data object
+        data = Data(
+            x=expression,
+            edge_index=edge_index,
+            pos=torch.tensor(coords, dtype=torch.float32),
+            num_nodes=expression.shape[0],
+        )
+        
+        # Add edge type (all spatial = 0)
+        data.edge_type = torch.zeros(edge_index.shape[1], dtype=torch.long)
+        
+        # Add cell types if available
+        if 'annotation_JC' in adata_proc.obs.columns:
+            cell_types = adata_proc.obs['annotation_JC'].astype('category')
+            data.y = torch.tensor(cell_types.cat.codes.values, dtype=torch.long)
+            data.cell_type_names = list(cell_types.cat.categories)
+        elif 'cell_type' in adata_proc.obs.columns:
+            cell_types = adata_proc.obs['cell_type'].astype('category')
+            data.y = torch.tensor(cell_types.cat.codes.values, dtype=torch.long)
+            data.cell_type_names = list(cell_types.cat.categories)
+        
+        # Add gene names
+        data.gene_names = list(adata_proc.var_names)
+        
+        print(f"  Built graph: {data.num_nodes} nodes, {data.edge_index.shape[1]} edges, "
+              f"{expression.shape[1]} genes")
+        
+        return data
         
     def run_inverse_inference(
         self,
@@ -493,20 +575,8 @@ class InverseModellingAnalysis:
                 # Load data
                 adata = self.load_region_data(region)
                 
-                # Create PyG data (simplified - would need proper graph construction)
-                from grail_heart.data.graph_builder import CardiacGraphBuilder
-                
-                builder = CardiacGraphBuilder(
-                    k_neighbors=6,
-                    use_spatial=True,
-                )
-                
-                # Build graph
-                data = builder.build_from_adata(
-                    adata,
-                    gene_list=None,  # Use all genes
-                    max_genes=2000,
-                )
+                # Build graph using SpatialGraphBuilder
+                data = self._build_pyg_data_from_adata(adata)
                 
                 # Run inverse inference
                 results = self.run_inverse_inference(data, region)

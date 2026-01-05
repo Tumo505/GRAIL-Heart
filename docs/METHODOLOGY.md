@@ -16,6 +16,7 @@
 8. [Training Strategy](#training-strategy)
 9. [Cross-Validation](#cross-validation)
 10. [Inference Pipeline](#inference-pipeline)
+11. [Inverse Modelling](#inverse-modelling)
 
 ---
 
@@ -519,8 +520,51 @@ model = GRAILHeart(
 # Run enhanced inference (recommended)
 python enhanced_inference.py
 
-# Or run basic inverse inference
+# Or run inverse inference with full mechanobiology analysis
 python inverse_inference.py
+```
+
+#### Inverse Inference Pipeline
+
+The `inverse_inference.py` script performs comprehensive inverse modelling analysis including:
+1. **Mechanosensitive pathway analysis** - p-value testing for 8 key pathways
+2. **Causal L-R interaction scoring** - identifying causally important cell-cell signals
+3. **Cell fate prediction** - differentiation staging via diffusion pseudotime
+4. **Network visualization** - causal network graphs per region
+
+**Output Structure:**
+```
+outputs/inverse_analysis/
+├── inverse_modelling_summary.json    # Master summary with all metrics
+├── mechanobiology/
+│   ├── AX_mechano_pathways.json      # Per-region mechanosensitive pathway p-values
+│   ├── LA_mechano_pathways.json
+│   ├── LV_mechano_pathways.json
+│   ├── RA_mechano_pathways.json
+│   ├── RV_mechano_pathways.json
+│   └── SP_mechano_pathways.json
+├── causal_analysis/
+│   ├── AX_causal_lr.csv              # Per-region causal L-R interaction scores
+│   ├── LA_causal_lr.csv
+│   ├── LV_causal_lr.csv
+│   ├── RA_causal_lr.csv
+│   ├── RV_causal_lr.csv
+│   └── SP_causal_lr.csv
+├── fate_prediction/
+│   ├── AX_fate_analysis.json         # Cell fate differentiation metrics
+│   ├── LA_fate_analysis.json
+│   ├── LV_fate_analysis.json
+│   ├── RA_fate_analysis.json
+│   ├── RV_fate_analysis.json
+│   └── SP_fate_analysis.json
+└── figures/
+    ├── mechano_pathway_heatmap.png   # Cross-region mechanobiology heatmap
+    ├── AX_causal_network.png         # Causal network visualization
+    ├── LA_causal_network.png
+    ├── LV_causal_network.png
+    ├── RA_causal_network.png
+    ├── RV_causal_network.png
+    └── SP_causal_network.png
 ```
 
 #### Enhanced Inference Outputs
@@ -555,6 +599,34 @@ Each `{region}_causal_edges.csv` contains:
 | `causal_score` | Score [0,1] indicating causal importance for cell fate |
 
 High causal scores (>0.8) indicate L-R interactions that are causally responsible for driving cell differentiation, not just co-expressed.
+
+#### Inverse Modelling Causal Analysis Output Format
+
+From `outputs/inverse_analysis/causal_analysis/{region}_causal_lr.csv`:
+| Column | Description |
+|--------|-------------|
+| `edge_idx` | Edge index in the spatial graph |
+| `source_cell` | Source cell identifier |
+| `target_cell` | Target cell identifier |
+| `causal_score` | Score [0,1] indicating causal importance for cell fate |
+| `lr_score` | L-R interaction probability from model |
+| `region` | Cardiac region identifier |
+
+#### Mechanosensitive Pathway Analysis
+
+The inverse modelling tests 8 mechanosensitive signaling pathways:
+| Pathway | Description | Key Genes |
+|---------|-------------|-----------|
+| YAP_TAZ | Hippo pathway mechanotransduction | YAP1, WWTR1, TEAD1-4 |
+| Integrin_FAK | Focal adhesion signaling | ITGA5, ITGAV, PTK2 |
+| Piezo | Mechanosensitive ion channels | PIEZO1, PIEZO2 |
+| TGF_beta | Fibrosis/remodeling | TGFB1-3, TGFBR1-2 |
+| Wnt | Development/regeneration | WNT1-11, FZD1-10 |
+| Notch | Cell fate determination | NOTCH1-4, JAG1-2, DLL1-4 |
+| BMP | Bone morphogenetic protein | BMP2-7, BMPR1A/B |
+| FGF | Fibroblast growth factor | FGF1-23, FGFR1-4 |
+
+P-values indicate pathway enrichment significance (stored in `outputs/inverse_analysis/mechanobiology/{region}_mechano_pathways.json`).
 
 #### Key Metrics from Enhanced Inference
 
