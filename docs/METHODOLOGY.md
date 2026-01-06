@@ -319,12 +319,7 @@ $$\mathcal{L}_{recon} = \mathcal{L}_{MSE} + \lambda_1 \mathcal{L}_{cosine} + \la
 
 ## Inverse Modelling Framework
 
-### Motivation
-
-The abstract states:
-> "This inverse modelling framework will also elucidate mechanosensitive pathways that modulate early-stage cardiac tissue patterning, linking molecular signalling to the formation of soft contractile structures."
-
-While the **forward modelling** (described above) predicts L-R interactions from expression data, **inverse modelling** answers the causal question:
+While the **forward modelling** predicts L-R interactions from expression data, **inverse modelling** answers the causal question:
 
 **"Which L-R signals are responsible for driving cell differentiation?"**
 
@@ -400,7 +395,7 @@ L-R Features → lr_to_pathway → pathway_gene_matrix → Gene Effects
 
 #### 4. Mechanosensitive Pathway Module
 
-Models cardiac mechanobiology as described in the abstract:
+Models cardiac mechanobiology:
 
 **Mechanosensitive Pathways:**
 | Pathway | Biological Role |
@@ -752,7 +747,6 @@ Final metrics are reported as **mean ± std** across all 6 folds.
 1. **Limited Data**: Only 6 spatial graphs available
 2. **Region Heterogeneity**: Each cardiac region has distinct biology
 3. **True Generalization**: Tests if model works on unseen regions
-4. **Publication Standard**: Required for scientific claims
 
 ---
 
