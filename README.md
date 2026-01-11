@@ -4,7 +4,7 @@ A Graph Neural Network framework for analyzing cell-cell communication in cardia
 
 ## Live Demo
 
-**[Interactive Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/grail_heart_explorer.html)**
+**[Interactive Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)**
 
 Explore ligand-receptor interaction networks across all six cardiac regions with our interactive web application.
 

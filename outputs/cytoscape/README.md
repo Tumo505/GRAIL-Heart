@@ -2,7 +2,7 @@
 
 ## 🌐 Live Interactive Explorer
 
-**[Open GRAIL-Heart Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/grail_heart_explorer.html)**
+**[Open GRAIL-Heart Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)**
 
 The unified interactive explorer allows you to:
 - Switch between all 6 cardiac regions + integrated network
