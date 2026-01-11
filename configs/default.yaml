@@ -1,14 +1,15 @@
 # GRAIL-Heart Configuration
 # Default training configuration
+# Updated with optimal hyperparameters from ablation study (Jan 2026)
 
 # Model Architecture
 model:
   hidden_dim: 256
-  n_gat_layers: 3
-  n_heads: 8
+  n_gat_layers: 4        # Optimized: 4 layers (from ablation: best R²=0.849)
+  n_heads: 4             # Optimized: 4 heads (from ablation: AUROC=0.898)
   n_edge_types: 2
   encoder_dims: [512, 256]
-  dropout: 0.1
+  dropout: 0.2           # Optimized: 0.2 dropout (from ablation: AUROC=0.905)
   use_spatial: true
   use_variational: false
   tasks:
@@ -16,7 +17,7 @@ model:
     - reconstruction
     - cell_type
   # Reconstruction decoder type: 'basic', 'improved', 'residual', or 'zinb'
-  decoder_type: residual
+  decoder_type: residual  # Critical: residual decoder essential (basic gives R²=-0.198)
   # Inverse modelling configuration
   use_inverse_modelling: true
   n_fates: null  # null = use n_cell_types
@@ -82,7 +83,7 @@ checkpoint:
 logging:
   log_interval: 10
   use_tensorboard: true
-  use_wandb: true
+  use_wandb: false  # Disabled due to network issues
   wandb_project: grail-heart
   wandb_entity: null  # Set to your wandb username/team, or null for default
 
