@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAIL-Heart Network Explorer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .section-title {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .region-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .region-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .region-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .region-btn.active {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+        }
+        
+        .region-btn.integrated {
+            grid-column: span 2;
+        }
+        
+        .stats-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            color: #e94560;
+        }
+        
+        .legend {
+            margin-bottom: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 0.85em;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            display: block;
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        .search-box::placeholder {
+            color: #666;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .network-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #network-svg {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(233, 69, 96, 0.05) 0%, transparent 70%);
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 0.85em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        .tooltip.visible {
+            opacity: 1;
+        }
+        
+        .tooltip-title {
+            font-weight: 700;
+            color: #e94560;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        
+        .tooltip-label {
+            color: #888;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .info-panel kbd {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 0 3px;
+        }
+        
+        .region-label {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2em;
+            font-weight: 700;
+            color: rgba(255,255,255,0.1);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            pointer-events: none;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .node:hover {
+            filter: brightness(1.3);
+        }
+        
+        .node.highlighted {
+            filter: brightness(1.5);
+        }
+        
+        .node.dimmed {
+            opacity: 0.2;
+        }
+        
+        .link {
+            stroke-opacity: 0.6;
+            transition: all 0.2s;
+        }
+        
+        .link.highlighted {
+            stroke-opacity: 1;
+            stroke-width: 3px !important;
+        }
+        
+        .link.dimmed {
+            stroke-opacity: 0.1;
+        }
+        
+        .node-label {
+            font-size: 10px;
+            fill: #fff;
+            pointer-events: none;
+            text-shadow: 0 0 3px rgba(0,0,0,0.8);
+        }
+        
+        .heart-diagram {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .heart-svg {
+            width: 200px;
+            height: 180px;
+        }
+        
+        .heart-chamber {
+            fill: rgba(255,255,255,0.1);
+            stroke: rgba(255,255,255,0.3);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .heart-chamber:hover {
+            fill: rgba(233, 69, 96, 0.3);
+        }
+        
+        .heart-chamber.active {
+            fill: rgba(233, 69, 96, 0.5);
+            stroke: #e94560;
+        }
+        
+        .chamber-label {
+            font-size: 10px;
+            fill: #fff;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            margin-top: 10px;
+        }
+        
+        .export-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1> GRAIL-Heart Network Explorer</h1>
+            <div class="subtitle">Interactive Ligand-Receptor Interaction Networks</div>
+        </div>
+        <div style="text-align: right; font-size: 0.8em; color: #666;">
+            Human Heart Cell Atlas | 42,654 cells | 6 regions
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="section-title">Cardiac Regions</div>
+            
+            <!-- Simplified Heart Diagram -->
+            <div class="heart-diagram">
+                <svg class="heart-svg" viewBox="0 0 200 180">
+                    <!-- Simplified heart chambers -->
+                    <path class="heart-chamber" id="heart-LA" d="M40,40 Q60,20 90,40 L90,70 Q65,80 40,70 Z" data-region="LA"/>
+                    <path class="heart-chamber" id="heart-RA" d="M110,40 Q140,20 160,40 L160,70 Q135,80 110,70 Z" data-region="RA"/>
+                    <path class="heart-chamber" id="heart-LV" d="M40,80 Q40,130 100,160 L100,90 Q70,85 40,80 Z" data-region="LV"/>
+                    <path class="heart-chamber" id="heart-RV" d="M160,80 Q160,130 100,160 L100,90 Q130,85 160,80 Z" data-region="RV"/>
+                    <path class="heart-chamber" id="heart-SP" d="M95,70 L105,70 L105,160 L95,160 Z" data-region="SP"/>
+                    <ellipse class="heart-chamber" id="heart-AX" cx="100" cy="165" rx="20" ry="10" data-region="AX"/>
+                    
+                    <!-- Labels -->
+                    <text class="chamber-label" x="65" y="55">LA</text>
+                    <text class="chamber-label" x="135" y="55">RA</text>
+                    <text class="chamber-label" x="60" y="120">LV</text>
+                    <text class="chamber-label" x="140" y="120">RV</text>
+                    <text class="chamber-label" x="100" y="115">SP</text>
+                    <text class="chamber-label" x="100" y="168">AX</text>
+                </svg>
+            </div>
+            
+            <div class="region-buttons">
+                <button class="region-btn" data-region="AX">Apex (AX)</button>
+                <button class="region-btn" data-region="LA">Left Atrium</button>
+                <button class="region-btn" data-region="LV">Left Ventricle</button>
+                <button class="region-btn" data-region="RA">Right Atrium</button>
+                <button class="region-btn" data-region="RV">Right Ventricle</button>
+                <button class="region-btn" data-region="SP">Septum (SP)</button>
+                <button class="region-btn integrated active" data-region="integrated">🔗 Integrated Network</button>
+            </div>
+            
+            <div class="section-title">Network Statistics</div>
+            <div class="stats-panel">
+                <div class="stat-row">
+                    <span class="stat-label">Nodes (Genes)</span>
+                    <span class="stat-value" id="stat-nodes">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Edges (Interactions)</span>
+                    <span class="stat-value" id="stat-edges">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg. Causal Score</span>
+                    <span class="stat-value" id="stat-score">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Network Density</span>
+                    <span class="stat-value" id="stat-density">-</span>
+                </div>
+            </div>
+            
+            <div class="section-title">Search & Filter</div>
+            <input type="text" class="search-box" id="search-input" placeholder="Search gene (e.g., TIMP1, MMP2)">
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label class="control-label">Min Causal Score: <span id="score-value">0.5</span></label>
+                    <input type="range" class="slider" id="score-filter" min="0" max="2" step="0.1" value="0.5">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Node Size: <span id="size-value">1.0</span>x</label>
+                    <input type="range" class="slider" id="size-slider" min="0.5" max="2" step="0.1" value="1">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Link Force: <span id="force-value">1.0</span>x</label>
+                    <input type="range" class="slider" id="force-slider" min="0.2" max="3" step="0.1" value="1">
+                </div>
+            </div>
+            
+            <div class="section-title">Legend</div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e94560;"></div>
+                    <span>Ligand</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Receptor</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f7d794;"></div>
+                    <span>Dual Role (Ligand & Receptor)</span>
+                </div>
+            </div>
+            
+            <div class="section-title">Export</div>
+            <button class="export-btn" onclick="exportSVG()">📥 Download SVG</button>
+            <button class="export-btn" onclick="exportPNG()">📥 Download PNG</button>
+        </div>
+        
+        <div class="network-container">
+            <div class="region-label" id="region-label">INTEGRATED</div>
+            <svg id="network-svg"></svg>
+            <div class="tooltip" id="tooltip"></div>
+            <div class="info-panel">
+                <kbd>Scroll</kbd> Zoom | <kbd>Drag</kbd> Pan | <kbd>Click</kbd> Node details | <kbd>Double-click</kbd> Focus
+            </div>
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <div>Loading network data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Network data will be embedded here
+        const networkData = {
+            // Integrated network
+            integrated: {"nodes":[{"id":"TIMP1","type":"ligand","degree":3},{"id":"MMP2","type":"receptor","degree":6},{"id":"FBLN1","type":"ligand","degree":2},{"id":"FN1","type":"receptor","degree":4},{"id":"A2M","type":"ligand","degree":1},{"id":"SERPING1","type":"ligand","degree":4},{"id":"C1S","type":"receptor","degree":2},{"id":"C1R","type":"receptor","degree":2},{"id":"CFD","type":"ligand","degree":1},{"id":"C3","type":"dual","degree":3},{"id":"DCN","type":"dual","degree":2},{"id":"LRP1","type":"receptor","degree":5},{"id":"TIMP2","type":"ligand","degree":2},{"id":"TIMP3","type":"ligand","degree":1},{"id":"C1QB","type":"ligand","degree":1},{"id":"THBS1","type":"ligand","degree":4},{"id":"COL1A2","type":"ligand","degree":1},{"id":"ITGA5","type":"receptor","degree":3},{"id":"JAG1","type":"ligand","degree":2},{"id":"NOTCH3","type":"receptor","degree":3},{"id":"JAG2","type":"ligand","degree":1},{"id":"CTGF","type":"ligand","degree":1},{"id":"COL1A1","type":"ligand","degree":2},{"id":"DDR2","type":"receptor","degree":2},{"id":"CXCL12","type":"ligand","degree":2},{"id":"ACKR3","type":"receptor","degree":2},{"id":"C3AR1","type":"receptor","degree":2},{"id":"SEMA3C","type":"ligand","degree":1},{"id":"PLXND1","type":"receptor","degree":1},{"id":"TGFB1","type":"ligand","degree":1},{"id":"TGFBR1","type":"receptor","degree":1},{"id":"MIF","type":"ligand","degree":1},{"id":"CD74","type":"receptor","degree":1},{"id":"ITGAV","type":"receptor","degree":2},{"id":"THBS4","type":"ligand","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.43,"region":"multi"},{"source":"FBLN1","target":"FN1","weight":1.40,"region":"multi"},{"source":"A2M","target":"MMP2","weight":1.35,"region":"AX"},{"source":"SERPING1","target":"C1S","weight":1.39,"region":"multi"},{"source":"SERPING1","target":"C1R","weight":1.37,"region":"LA"},{"source":"CFD","target":"C3","weight":1.44,"region":"LV"},{"source":"DCN","target":"LRP1","weight":1.36,"region":"LV"},{"source":"MMP2","target":"DCN","weight":1.34,"region":"LV"},{"source":"TIMP2","target":"MMP2","weight":1.42,"region":"RA"},{"source":"TIMP3","target":"MMP2","weight":1.36,"region":"RA"},{"source":"C1QB","target":"LRP1","weight":1.42,"region":"RV"},{"source":"THBS1","target":"LRP1","weight":1.41,"region":"RV"},{"source":"THBS1","target":"FN1","weight":1.41,"region":"SP"},{"source":"COL1A2","target":"ITGA5","weight":1.38,"region":"SP"},{"source":"JAG1","target":"NOTCH3","weight":1.32,"region":"multi"},{"source":"JAG2","target":"NOTCH3","weight":1.30,"region":"AX"},{"source":"CTGF","target":"LRP1","weight":1.31,"region":"AX"},{"source":"COL1A1","target":"DDR2","weight":1.30,"region":"multi"},{"source":"CXCL12","target":"ACKR3","weight":1.33,"region":"multi"},{"source":"C3","target":"C3AR1","weight":1.35,"region":"multi"},{"source":"SEMA3C","target":"PLXND1","weight":1.31,"region":"RA"},{"source":"TGFB1","target":"TGFBR1","weight":1.29,"region":"RA"},{"source":"THBS1","target":"ITGA3","weight":1.30,"region":"RA"},{"source":"MIF","target":"CD74","weight":1.28,"region":"RV"},{"source":"THBS1","target":"ITGAV","weight":1.32,"region":"RV"},{"source":"FN1","target":"ITGAV","weight":1.31,"region":"RV"},{"source":"FN1","target":"ITGA5","weight":1.33,"region":"SP"},{"source":"THBS4","target":"ITGA5","weight":1.29,"region":"SP"},{"source":"FBLN1","target":"FN1","weight":1.39,"region":"SP"},{"source":"COL1A1","target":"DDR2","weight":1.28,"region":"SP"},{"source":"SERPING1","target":"C1S","weight":1.36,"region":"RA"}]},
+            
+            // Per-region networks (will be populated)
+            AX: {"nodes":[{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":3},{"id":"FBLN1","type":"ligand","degree":1},{"id":"FN1","type":"receptor","degree":1},{"id":"A2M","type":"ligand","degree":1},{"id":"JAG1","type":"ligand","degree":1},{"id":"NOTCH3","type":"receptor","degree":2},{"id":"JAG2","type":"ligand","degree":1},{"id":"CTGF","type":"ligand","degree":1},{"id":"LRP1","type":"receptor","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.447},{"source":"FBLN1","target":"FN1","weight":1.405},{"source":"A2M","target":"MMP2","weight":1.348},{"source":"JAG1","target":"NOTCH3","weight":1.324},{"source":"JAG2","target":"NOTCH3","weight":1.298},{"source":"CTGF","target":"LRP1","weight":1.312}]},
+            
+            LA: {"nodes":[{"id":"SERPING1","type":"ligand","degree":2},{"id":"C1S","type":"receptor","degree":1},{"id":"C1R","type":"receptor","degree":1},{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":1},{"id":"C3","type":"dual","degree":1},{"id":"C3AR1","type":"receptor","degree":1},{"id":"COL1A1","type":"ligand","degree":1},{"id":"DDR2","type":"receptor","degree":1},{"id":"CXCL12","type":"ligand","degree":1},{"id":"ACKR3","type":"receptor","degree":1}],"edges":[{"source":"SERPING1","target":"C1S","weight":1.414},{"source":"SERPING1","target":"C1R","weight":1.386},{"source":"TIMP1","target":"MMP2","weight":1.367},{"source":"C3","target":"C3AR1","weight":1.342},{"source":"COL1A1","target":"DDR2","weight":1.298},{"source":"CXCL12","target":"ACKR3","weight":1.321}]},
+            
+            LV: {"nodes":[{"id":"CFD","type":"ligand","degree":1},{"id":"C3","type":"dual","degree":2},{"id":"DCN","type":"dual","degree":2},{"id":"LRP1","type":"receptor","degree":1},{"id":"MMP2","type":"receptor","degree":2},{"id":"C3AR1","type":"receptor","degree":1},{"id":"JAG1","type":"ligand","degree":1},{"id":"NOTCH3","type":"receptor","degree":1},{"id":"CXCL12","type":"ligand","degree":1},{"id":"ACKR3","type":"receptor","degree":1}],"edges":[{"source":"CFD","target":"C3","weight":1.443},{"source":"DCN","target":"LRP1","weight":1.357},{"source":"MMP2","target":"DCN","weight":1.344},{"source":"C3","target":"C3AR1","weight":1.312},{"source":"JAG1","target":"NOTCH3","weight":1.289},{"source":"CXCL12","target":"ACKR3","weight":1.276}]},
+            
+            RA: {"nodes":[{"id":"TIMP2","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":2},{"id":"SERPING1","type":"ligand","degree":1},{"id":"C1S","type":"receptor","degree":1},{"id":"TIMP3","type":"ligand","degree":1},{"id":"SEMA3C","type":"ligand","degree":1},{"id":"PLXND1","type":"receptor","degree":1},{"id":"TGFB1","type":"ligand","degree":1},{"id":"TGFBR1","type":"receptor","degree":1},{"id":"THBS1","type":"ligand","degree":1},{"id":"ITGA3","type":"receptor","degree":1}],"edges":[{"source":"TIMP2","target":"MMP2","weight":1.419},{"source":"SERPING1","target":"C1S","weight":1.362},{"source":"TIMP3","target":"MMP2","weight":1.355},{"source":"SEMA3C","target":"PLXND1","weight":1.308},{"source":"TGFB1","target":"TGFBR1","weight":1.287},{"source":"THBS1","target":"ITGA3","weight":1.298}]},
+            
+            RV: {"nodes":[{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":1},{"id":"C1QB","type":"ligand","degree":1},{"id":"LRP1","type":"receptor","degree":2},{"id":"THBS1","type":"ligand","degree":2},{"id":"FN1","type":"receptor","degree":1},{"id":"ITGAV","type":"receptor","degree":2},{"id":"MIF","type":"ligand","degree":1},{"id":"CD74","type":"receptor","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.425},{"source":"C1QB","target":"LRP1","weight":1.419},{"source":"THBS1","target":"LRP1","weight":1.406},{"source":"THBS1","target":"ITGAV","weight":1.321},{"source":"FN1","target":"ITGAV","weight":1.308},{"source":"MIF","target":"CD74","weight":1.276}]},
+            
+            SP: {"nodes":[{"id":"THBS1","type":"ligand","degree":1},{"id":"FN1","type":"receptor","degree":3},{"id":"FBLN1","type":"ligand","degree":1},{"id":"COL1A2","type":"ligand","degree":1},{"id":"ITGA5","type":"receptor","degree":2},{"id":"COL1A1","type":"ligand","degree":1},{"id":"DDR2","type":"receptor","degree":1},{"id":"THBS4","type":"ligand","degree":1}],"edges":[{"source":"THBS1","target":"FN1","weight":1.406},{"source":"FBLN1","target":"FN1","weight":1.394},{"source":"COL1A2","target":"ITGA5","weight":1.380},{"source":"FN1","target":"ITGA5","weight":1.332},{"source":"COL1A1","target":"DDR2","weight":1.278},{"source":"THBS4","target":"ITGA5","weight":1.289}]}
+        };
+        
+        // Region descriptions
+        const regionInfo = {
+            integrated: { name: "Integrated Network", cells: 42654, description: "Combined L-R interactions across all cardiac regions" },
+            AX: { name: "Apex", cells: 6497, description: "Cardiac apex - tip of the heart" },
+            LA: { name: "Left Atrium", cells: 5822, description: "Upper left chamber receiving oxygenated blood" },
+            LV: { name: "Left Ventricle", cells: 9626, description: "Main pumping chamber to systemic circulation" },
+            RA: { name: "Right Atrium", cells: 7027, description: "Upper right chamber receiving deoxygenated blood" },
+            RV: { name: "Right Ventricle", cells: 5039, description: "Pumping chamber to pulmonary circulation" },
+            SP: { name: "Septum", cells: 8643, description: "Muscular wall separating left and right chambers" }
+        };
+        
+        // Current state
+        let currentRegion = 'integrated';
+        let simulation = null;
+        let currentData = null;
+        let nodeSize = 1;
+        let forceStrength = 1;
+        let minScore = 0.5;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            loadNetwork('integrated');
+        });
+        
+        function setupEventListeners() {
+            // Region buttons
+            document.querySelectorAll('.region-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const region = btn.dataset.region;
+                    selectRegion(region);
+                });
+            });
+            
+            // Heart diagram chambers
+            document.querySelectorAll('.heart-chamber').forEach(chamber => {
+                chamber.addEventListener('click', () => {
+                    const region = chamber.dataset.region;
+                    selectRegion(region);
+                });
+            });
+            
+            // Search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                highlightNode(e.target.value);
+            });
+            
+            // Sliders
+            document.getElementById('score-filter').addEventListener('input', (e) => {
+                minScore = parseFloat(e.target.value);
+                document.getElementById('score-value').textContent = minScore.toFixed(1);
+                filterByScore();
+            });
+            
+            document.getElementById('size-slider').addEventListener('input', (e) => {
+                nodeSize = parseFloat(e.target.value);
+                document.getElementById('size-value').textContent = nodeSize.toFixed(1);
+                updateNodeSizes();
+            });
+            
+            document.getElementById('force-slider').addEventListener('input', (e) => {
+                forceStrength = parseFloat(e.target.value);
+                document.getElementById('force-value').textContent = forceStrength.toFixed(1);
+                updateForce();
+            });
+        }
+        
+        function selectRegion(region) {
+            currentRegion = region;
+            
+            // Update UI
+            document.querySelectorAll('.region-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.region === region);
+            });
+            
+            document.querySelectorAll('.heart-chamber').forEach(chamber => {
+                chamber.classList.toggle('active', chamber.dataset.region === region);
+            });
+            
+            document.getElementById('region-label').textContent = regionInfo[region].name.toUpperCase();
+            
+            loadNetwork(region);
+        }
+        
+        function loadNetwork(region) {
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                currentData = JSON.parse(JSON.stringify(networkData[region]));
+                renderNetwork(currentData);
+                updateStats(currentData);
+                document.getElementById('loading').style.display = 'none';
+            }, 300);
+        }
+        
+        function renderNetwork(data) {
+            const svg = d3.select('#network-svg');
+            svg.selectAll('*').remove();
+            
+            const container = document.querySelector('.network-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            svg.attr('width', width).attr('height', height);
+            
+            // Create zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.2, 5])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+            
+            svg.call(zoom);
+            
+            const g = svg.append('g');
+            
+            // Color scale
+            const colorScale = {
+                ligand: '#e94560',
+                receptor: '#4ecdc4',
+                dual: '#f7d794'
+            };
+            
+            // Edge weight scale
+            const weightScale = d3.scaleLinear()
+                .domain([d3.min(data.edges, d => d.weight), d3.max(data.edges, d => d.weight)])
+                .range([1, 4]);
+            
+            // Create simulation
+            simulation = d3.forceSimulation(data.nodes)
+                .force('link', d3.forceLink(data.edges)
+                    .id(d => d.id)
+                    .distance(80 * forceStrength))
+                .force('charge', d3.forceManyBody().strength(-200 * forceStrength))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(30));
+            
+            // Draw edges
+            const link = g.append('g')
+                .selectAll('line')
+                .data(data.edges)
+                .join('line')
+                .attr('class', 'link')
+                .attr('stroke', '#666')
+                .attr('stroke-width', d => weightScale(d.weight));
+            
+            // Draw nodes
+            const node = g.append('g')
+                .selectAll('g')
+                .data(data.nodes)
+                .join('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+            
+            node.append('circle')
+                .attr('r', d => (5 + d.degree * 2) * nodeSize)
+                .attr('fill', d => colorScale[d.type])
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2);
+            
+            node.append('text')
+                .attr('class', 'node-label')
+                .attr('dy', d => (5 + d.degree * 2) * nodeSize + 12)
+                .attr('text-anchor', 'middle')
+                .text(d => d.id);
+            
+            // Tooltip interactions
+            const tooltip = d3.select('#tooltip');
+            
+            node.on('mouseover', (event, d) => {
+                const connections = data.edges.filter(e => e.source.id === d.id || e.target.id === d.id);
+                
+                tooltip.html(`
+                    <div class="tooltip-title">${d.id}</div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Type:</span>
+                        <span>${d.type.charAt(0).toUpperCase() + d.type.slice(1)}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Connections:</span>
+                        <span>${d.degree}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Partners:</span>
+                        <span>${connections.map(c => c.source.id === d.id ? c.target.id : c.source.id).join(', ')}</span>
+                    </div>
+                `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px')
+                .classed('visible', true);
+                
+                // Highlight connected nodes and edges
+                node.classed('dimmed', n => !connections.some(c => c.source.id === n.id || c.target.id === n.id) && n.id !== d.id);
+                link.classed('dimmed', l => l.source.id !== d.id && l.target.id !== d.id);
+                link.classed('highlighted', l => l.source.id === d.id || l.target.id === d.id);
+            })
+            .on('mouseout', () => {
+                tooltip.classed('visible', false);
+                node.classed('dimmed', false);
+                link.classed('dimmed', false);
+                link.classed('highlighted', false);
+            })
+            .on('dblclick', (event, d) => {
+                // Center on node
+                const transform = d3.zoomIdentity
+                    .translate(width / 2, height / 2)
+                    .scale(2)
+                    .translate(-d.x, -d.y);
+                svg.transition().duration(750).call(zoom.transform, transform);
+            });
+            
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+            
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+        }
+        
+        function updateStats(data) {
+            document.getElementById('stat-nodes').textContent = data.nodes.length;
+            document.getElementById('stat-edges').textContent = data.edges.length;
+            
+            const avgScore = data.edges.reduce((sum, e) => sum + e.weight, 0) / data.edges.length;
+            document.getElementById('stat-score').textContent = avgScore.toFixed(3);
+            
+            const maxEdges = data.nodes.length * (data.nodes.length - 1) / 2;
+            const density = (data.edges.length / maxEdges * 100).toFixed(1);
+            document.getElementById('stat-density').textContent = density + '%';
+        }
+        
+        function highlightNode(query) {
+            if (!query) {
+                d3.selectAll('.node').classed('highlighted', false).classed('dimmed', false);
+                d3.selectAll('.link').classed('dimmed', false);
+                return;
+            }
+            
+            const matchingNodes = currentData.nodes.filter(n => 
+                n.id.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            const matchingIds = new Set(matchingNodes.map(n => n.id));
+            
+            d3.selectAll('.node').classed('highlighted', d => matchingIds.has(d.id));
+            d3.selectAll('.node').classed('dimmed', d => !matchingIds.has(d.id) && matchingIds.size > 0);
+        }
+        
+        function filterByScore() {
+            d3.selectAll('.link')
+                .style('display', d => d.weight >= minScore ? 'block' : 'none');
+        }
+        
+        function updateNodeSizes() {
+            d3.selectAll('.node circle')
+                .attr('r', d => (5 + d.degree * 2) * nodeSize);
+            d3.selectAll('.node-label')
+                .attr('dy', d => (5 + d.degree * 2) * nodeSize + 12);
+        }
+        
+        function updateForce() {
+            if (simulation) {
+                simulation
+                    .force('link').distance(80 * forceStrength);
+                simulation
+                    .force('charge').strength(-200 * forceStrength);
+                simulation.alpha(0.3).restart();
+            }
+        }
+        
+        function exportSVG() {
+            const svg = document.getElementById('network-svg');
+            const serializer = new XMLSerializer();
+            const svgStr = serializer.serializeToString(svg);
+            
+            const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `grail_heart_${currentRegion}_network.svg`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function exportPNG() {
+            const svg = document.getElementById('network-svg');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = svg.clientWidth * 2;
+            canvas.height = svg.clientHeight * 2;
+            
+            const data = new XMLSerializer().serializeToString(svg);
+            const img = new Image();
+            const svgBlob = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = () => {
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `grail_heart_${currentRegion}_network.png`;
+                a.click();
+            };
+            
+            img.src = url;
+        }
+    </script>
+</body>
+</html>
