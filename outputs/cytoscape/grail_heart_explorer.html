@@ -507,24 +507,51 @@
     </div>
 
     <script>
-        // Network data will be embedded here
-        const networkData = {
-            // Integrated network
-            integrated: {"nodes":[{"id":"TIMP1","type":"ligand","degree":3},{"id":"MMP2","type":"receptor","degree":6},{"id":"FBLN1","type":"ligand","degree":2},{"id":"FN1","type":"receptor","degree":4},{"id":"A2M","type":"ligand","degree":1},{"id":"SERPING1","type":"ligand","degree":4},{"id":"C1S","type":"receptor","degree":2},{"id":"C1R","type":"receptor","degree":2},{"id":"CFD","type":"ligand","degree":1},{"id":"C3","type":"dual","degree":3},{"id":"DCN","type":"dual","degree":2},{"id":"LRP1","type":"receptor","degree":5},{"id":"TIMP2","type":"ligand","degree":2},{"id":"TIMP3","type":"ligand","degree":1},{"id":"C1QB","type":"ligand","degree":1},{"id":"THBS1","type":"ligand","degree":4},{"id":"COL1A2","type":"ligand","degree":1},{"id":"ITGA5","type":"receptor","degree":3},{"id":"JAG1","type":"ligand","degree":2},{"id":"NOTCH3","type":"receptor","degree":3},{"id":"JAG2","type":"ligand","degree":1},{"id":"CTGF","type":"ligand","degree":1},{"id":"COL1A1","type":"ligand","degree":2},{"id":"DDR2","type":"receptor","degree":2},{"id":"CXCL12","type":"ligand","degree":2},{"id":"ACKR3","type":"receptor","degree":2},{"id":"C3AR1","type":"receptor","degree":2},{"id":"SEMA3C","type":"ligand","degree":1},{"id":"PLXND1","type":"receptor","degree":1},{"id":"TGFB1","type":"ligand","degree":1},{"id":"TGFBR1","type":"receptor","degree":1},{"id":"MIF","type":"ligand","degree":1},{"id":"CD74","type":"receptor","degree":1},{"id":"ITGAV","type":"receptor","degree":2},{"id":"THBS4","type":"ligand","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.43,"region":"multi"},{"source":"FBLN1","target":"FN1","weight":1.40,"region":"multi"},{"source":"A2M","target":"MMP2","weight":1.35,"region":"AX"},{"source":"SERPING1","target":"C1S","weight":1.39,"region":"multi"},{"source":"SERPING1","target":"C1R","weight":1.37,"region":"LA"},{"source":"CFD","target":"C3","weight":1.44,"region":"LV"},{"source":"DCN","target":"LRP1","weight":1.36,"region":"LV"},{"source":"MMP2","target":"DCN","weight":1.34,"region":"LV"},{"source":"TIMP2","target":"MMP2","weight":1.42,"region":"RA"},{"source":"TIMP3","target":"MMP2","weight":1.36,"region":"RA"},{"source":"C1QB","target":"LRP1","weight":1.42,"region":"RV"},{"source":"THBS1","target":"LRP1","weight":1.41,"region":"RV"},{"source":"THBS1","target":"FN1","weight":1.41,"region":"SP"},{"source":"COL1A2","target":"ITGA5","weight":1.38,"region":"SP"},{"source":"JAG1","target":"NOTCH3","weight":1.32,"region":"multi"},{"source":"JAG2","target":"NOTCH3","weight":1.30,"region":"AX"},{"source":"CTGF","target":"LRP1","weight":1.31,"region":"AX"},{"source":"COL1A1","target":"DDR2","weight":1.30,"region":"multi"},{"source":"CXCL12","target":"ACKR3","weight":1.33,"region":"multi"},{"source":"C3","target":"C3AR1","weight":1.35,"region":"multi"},{"source":"SEMA3C","target":"PLXND1","weight":1.31,"region":"RA"},{"source":"TGFB1","target":"TGFBR1","weight":1.29,"region":"RA"},{"source":"THBS1","target":"ITGA3","weight":1.30,"region":"RA"},{"source":"MIF","target":"CD74","weight":1.28,"region":"RV"},{"source":"THBS1","target":"ITGAV","weight":1.32,"region":"RV"},{"source":"FN1","target":"ITGAV","weight":1.31,"region":"RV"},{"source":"FN1","target":"ITGA5","weight":1.33,"region":"SP"},{"source":"THBS4","target":"ITGA5","weight":1.29,"region":"SP"},{"source":"FBLN1","target":"FN1","weight":1.39,"region":"SP"},{"source":"COL1A1","target":"DDR2","weight":1.28,"region":"SP"},{"source":"SERPING1","target":"C1S","weight":1.36,"region":"RA"}]},
+        // Network data - loaded dynamically from JSON files
+        let networkData = {};
+        
+        // Data file base URL (relative to HTML file)
+        const DATA_BASE_URL = 'data/';
+        
+        // Load network data from JSON files
+        async function loadNetworkData() {
+            try {
+                // Try loading combined file first (most efficient)
+                const response = await fetch(DATA_BASE_URL + 'all_networks.json');
+                if (response.ok) {
+                    networkData = await response.json();
+                    console.log('Loaded network data from all_networks.json');
+                    return true;
+                }
+            } catch (e) {
+                console.log('Combined file not available, trying individual files...');
+            }
             
-            // Per-region networks (will be populated)
-            AX: {"nodes":[{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":3},{"id":"FBLN1","type":"ligand","degree":1},{"id":"FN1","type":"receptor","degree":1},{"id":"A2M","type":"ligand","degree":1},{"id":"JAG1","type":"ligand","degree":1},{"id":"NOTCH3","type":"receptor","degree":2},{"id":"JAG2","type":"ligand","degree":1},{"id":"CTGF","type":"ligand","degree":1},{"id":"LRP1","type":"receptor","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.447},{"source":"FBLN1","target":"FN1","weight":1.405},{"source":"A2M","target":"MMP2","weight":1.348},{"source":"JAG1","target":"NOTCH3","weight":1.324},{"source":"JAG2","target":"NOTCH3","weight":1.298},{"source":"CTGF","target":"LRP1","weight":1.312}]},
+            // Fallback: load individual region files
+            const regions = ['integrated', 'AX', 'LA', 'LV', 'RA', 'RV', 'SP'];
+            let loadedCount = 0;
             
-            LA: {"nodes":[{"id":"SERPING1","type":"ligand","degree":2},{"id":"C1S","type":"receptor","degree":1},{"id":"C1R","type":"receptor","degree":1},{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":1},{"id":"C3","type":"dual","degree":1},{"id":"C3AR1","type":"receptor","degree":1},{"id":"COL1A1","type":"ligand","degree":1},{"id":"DDR2","type":"receptor","degree":1},{"id":"CXCL12","type":"ligand","degree":1},{"id":"ACKR3","type":"receptor","degree":1}],"edges":[{"source":"SERPING1","target":"C1S","weight":1.414},{"source":"SERPING1","target":"C1R","weight":1.386},{"source":"TIMP1","target":"MMP2","weight":1.367},{"source":"C3","target":"C3AR1","weight":1.342},{"source":"COL1A1","target":"DDR2","weight":1.298},{"source":"CXCL12","target":"ACKR3","weight":1.321}]},
+            for (const region of regions) {
+                try {
+                    const filename = region === 'integrated' ? 'integrated_network.json' : `${region}_network.json`;
+                    const response = await fetch(DATA_BASE_URL + filename);
+                    if (response.ok) {
+                        networkData[region] = await response.json();
+                        loadedCount++;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to load ${region} network:`, e);
+                }
+            }
             
-            LV: {"nodes":[{"id":"CFD","type":"ligand","degree":1},{"id":"C3","type":"dual","degree":2},{"id":"DCN","type":"dual","degree":2},{"id":"LRP1","type":"receptor","degree":1},{"id":"MMP2","type":"receptor","degree":2},{"id":"C3AR1","type":"receptor","degree":1},{"id":"JAG1","type":"ligand","degree":1},{"id":"NOTCH3","type":"receptor","degree":1},{"id":"CXCL12","type":"ligand","degree":1},{"id":"ACKR3","type":"receptor","degree":1}],"edges":[{"source":"CFD","target":"C3","weight":1.443},{"source":"DCN","target":"LRP1","weight":1.357},{"source":"MMP2","target":"DCN","weight":1.344},{"source":"C3","target":"C3AR1","weight":1.312},{"source":"JAG1","target":"NOTCH3","weight":1.289},{"source":"CXCL12","target":"ACKR3","weight":1.276}]},
+            if (loadedCount > 0) {
+                console.log(`Loaded ${loadedCount} network files individually`);
+                return true;
+            }
             
-            RA: {"nodes":[{"id":"TIMP2","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":2},{"id":"SERPING1","type":"ligand","degree":1},{"id":"C1S","type":"receptor","degree":1},{"id":"TIMP3","type":"ligand","degree":1},{"id":"SEMA3C","type":"ligand","degree":1},{"id":"PLXND1","type":"receptor","degree":1},{"id":"TGFB1","type":"ligand","degree":1},{"id":"TGFBR1","type":"receptor","degree":1},{"id":"THBS1","type":"ligand","degree":1},{"id":"ITGA3","type":"receptor","degree":1}],"edges":[{"source":"TIMP2","target":"MMP2","weight":1.419},{"source":"SERPING1","target":"C1S","weight":1.362},{"source":"TIMP3","target":"MMP2","weight":1.355},{"source":"SEMA3C","target":"PLXND1","weight":1.308},{"source":"TGFB1","target":"TGFBR1","weight":1.287},{"source":"THBS1","target":"ITGA3","weight":1.298}]},
-            
-            RV: {"nodes":[{"id":"TIMP1","type":"ligand","degree":1},{"id":"MMP2","type":"receptor","degree":1},{"id":"C1QB","type":"ligand","degree":1},{"id":"LRP1","type":"receptor","degree":2},{"id":"THBS1","type":"ligand","degree":2},{"id":"FN1","type":"receptor","degree":1},{"id":"ITGAV","type":"receptor","degree":2},{"id":"MIF","type":"ligand","degree":1},{"id":"CD74","type":"receptor","degree":1}],"edges":[{"source":"TIMP1","target":"MMP2","weight":1.425},{"source":"C1QB","target":"LRP1","weight":1.419},{"source":"THBS1","target":"LRP1","weight":1.406},{"source":"THBS1","target":"ITGAV","weight":1.321},{"source":"FN1","target":"ITGAV","weight":1.308},{"source":"MIF","target":"CD74","weight":1.276}]},
-            
-            SP: {"nodes":[{"id":"THBS1","type":"ligand","degree":1},{"id":"FN1","type":"receptor","degree":3},{"id":"FBLN1","type":"ligand","degree":1},{"id":"COL1A2","type":"ligand","degree":1},{"id":"ITGA5","type":"receptor","degree":2},{"id":"COL1A1","type":"ligand","degree":1},{"id":"DDR2","type":"receptor","degree":1},{"id":"THBS4","type":"ligand","degree":1}],"edges":[{"source":"THBS1","target":"FN1","weight":1.406},{"source":"FBLN1","target":"FN1","weight":1.394},{"source":"COL1A2","target":"ITGA5","weight":1.380},{"source":"FN1","target":"ITGA5","weight":1.332},{"source":"COL1A1","target":"DDR2","weight":1.278},{"source":"THBS4","target":"ITGA5","weight":1.289}]}
-        };
+            console.error('❌ Failed to load any network data');
+            return false;
+        }
         
         // Region descriptions
         const regionInfo = {
@@ -546,9 +573,20 @@
         let minScore = 0.5;
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            loadNetwork('integrated');
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loaded = await loadNetworkData();
+            if (loaded) {
+                setupEventListeners();
+                loadNetwork('integrated');
+            } else {
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: #e94560; font-size: 1.2em;">❌ Failed to load network data</div>
+                    <div style="margin-top: 10px; color: #888;">Please ensure JSON files exist in the data/ directory</div>
+                    <div style="margin-top: 5px; color: #666; font-size: 0.9em;">
+                        Run: <code>python scripts/generate_network_data.py</code>
+                    </div>
+                `;
+            }
         });
         
         function setupEventListeners() {
@@ -614,11 +652,18 @@
             document.getElementById('loading').style.display = 'block';
             
             setTimeout(() => {
+                if (!networkData[region]) {
+                    console.error(`No data available for region: ${region}`);
+                    document.getElementById('loading').innerHTML = `
+                        <div style="color: #e94560;">Data not available for ${region}</div>
+                    `;
+                    return;
+                }
                 currentData = JSON.parse(JSON.stringify(networkData[region]));
                 renderNetwork(currentData);
                 updateStats(currentData);
                 document.getElementById('loading').style.display = 'none';
-            }, 300);
+            }, 100);
         }
         
         function renderNetwork(data) {
@@ -683,15 +728,18 @@
                     .on('drag', dragged)
                     .on('end', dragended));
             
+            // Node size scales with sqrt of degree (prevents huge nodes for hubs)
+            const nodeRadius = d => (5 + Math.sqrt(d.degree) * 3) * nodeSize;
+            
             node.append('circle')
-                .attr('r', d => (5 + d.degree * 2) * nodeSize)
+                .attr('r', nodeRadius)
                 .attr('fill', d => colorScale[d.type])
                 .attr('stroke', '#fff')
                 .attr('stroke-width', 2);
             
             node.append('text')
                 .attr('class', 'node-label')
-                .attr('dy', d => (5 + d.degree * 2) * nodeSize + 12)
+                .attr('dy', d => nodeRadius(d) + 12)
                 .attr('text-anchor', 'middle')
                 .text(d => d.id);
             
@@ -708,12 +756,8 @@
                         <span>${d.type.charAt(0).toUpperCase() + d.type.slice(1)}</span>
                     </div>
                     <div class="tooltip-row">
-                        <span class="tooltip-label">Connections:</span>
+                        <span class="tooltip-label">Interactions:</span>
                         <span>${d.degree}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">Partners:</span>
-                        <span>${connections.map(c => c.source.id === d.id ? c.target.id : c.source.id).join(', ')}</span>
                     </div>
                 `)
                 .style('left', (event.pageX + 10) + 'px')
@@ -724,12 +768,45 @@
                 node.classed('dimmed', n => !connections.some(c => c.source.id === n.id || c.target.id === n.id) && n.id !== d.id);
                 link.classed('dimmed', l => l.source.id !== d.id && l.target.id !== d.id);
                 link.classed('highlighted', l => l.source.id === d.id || l.target.id === d.id);
+                
+                // Show edge labels with scores for connected edges
+                g.selectAll('.edge-label').remove();
+                g.selectAll('.edge-label')
+                    .data(connections)
+                    .join('text')
+                    .attr('class', 'edge-label')
+                    .attr('x', e => (e.source.x + e.target.x) / 2)
+                    .attr('y', e => (e.source.y + e.target.y) / 2)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#fff')
+                    .attr('font-size', '9px')
+                    .attr('font-weight', 'bold')
+                    .attr('paint-order', 'stroke')
+                    .attr('stroke', '#000')
+                    .attr('stroke-width', '3px')
+                    .text(e => e.weight.toFixed(2));
+                
+                // Enlarge hovered node and partners
+                node.select('circle')
+                    .attr('r', n => {
+                        const baseR = (5 + Math.sqrt(n.degree) * 3) * nodeSize;
+                        if (n.id === d.id) return baseR * 1.4;
+                        if (connections.some(c => c.source.id === n.id || c.target.id === n.id)) return baseR * 1.2;
+                        return baseR;
+                    });
             })
             .on('mouseout', () => {
                 tooltip.classed('visible', false);
                 node.classed('dimmed', false);
                 link.classed('dimmed', false);
                 link.classed('highlighted', false);
+                
+                // Remove edge labels
+                g.selectAll('.edge-label').remove();
+                
+                // Reset node sizes
+                node.select('circle')
+                    .attr('r', n => (5 + Math.sqrt(n.degree) * 3) * nodeSize);
             })
             .on('dblclick', (event, d) => {
                 // Center on node
@@ -805,9 +882,9 @@
         
         function updateNodeSizes() {
             d3.selectAll('.node circle')
-                .attr('r', d => (5 + d.degree * 2) * nodeSize);
+                .attr('r', d => (5 + Math.sqrt(d.degree) * 3) * nodeSize);
             d3.selectAll('.node-label')
-                .attr('dy', d => (5 + d.degree * 2) * nodeSize + 12);
+                .attr('dy', d => (5 + Math.sqrt(d.degree) * 3) * nodeSize + 12);
         }
         
         function updateForce() {

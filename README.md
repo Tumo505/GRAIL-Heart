@@ -2,6 +2,12 @@
 
 A Graph Neural Network framework for analyzing cell-cell communication in cardiac spatial transcriptomics data, featuring both **forward** and **inverse modelling** capabilities.
 
+## Live Demo
+
+**[Interactive Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/grail_heart_explorer.html)**
+
+Explore ligand-receptor interaction networks across all six cardiac regions with our interactive web application.
+
 ## Overview
 
 GRAIL-Heart is a deep learning model designed to discover and analyze ligand-receptor (L-R) interactions in spatial transcriptomics datasets, with a focus on cardiac tissue. The framework integrates:
