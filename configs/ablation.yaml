@@ -1,0 +1,91 @@
+# GRAIL-Heart Ablation Study Configuration
+# Configuration for systematic ablation experiments
+
+# Model Architecture (baseline)
+model:
+  hidden_dim: 256
+  n_gat_layers: 3
+  n_heads: 8
+  n_edge_types: 2
+  encoder_dims: [512, 256]
+  dropout: 0.1
+  use_spatial: true
+  use_variational: false
+  tasks:
+    - lr
+    - reconstruction
+    - cell_type
+  decoder_type: residual
+  use_inverse_modelling: false  # Disable for fair comparison
+
+# Data Configuration
+data:
+  n_top_genes: 2000
+  normalize: true
+  log_transform: true
+  min_cells: 3
+  min_genes: 200
+  graph_method: knn
+  k_neighbors: 6
+  batch_size: 1
+  num_workers: 0
+  max_files: 4  # Limit files for faster ablation
+
+# Training Configuration (reduced for ablation)
+training:
+  n_epochs: 50  # Reduced from 200
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  optimizer: adamw
+  scheduler: cosine
+  warmup_epochs: 5
+  grad_clip: 1.0
+  mixed_precision: true
+
+# Ablation-specific settings
+ablation:
+  n_epochs: 30  # Further reduced per experiment
+  patience: 10
+  n_repeats: 3  # Repeat each experiment for statistical significance
+
+# Loss Weights
+loss:
+  lr_weight: 1.0
+  recon_weight: 1.0
+  cell_type_weight: 1.0
+  signaling_weight: 0.1
+  kl_weight: 0.001
+  contrastive_weight: 0.5
+  use_contrastive: true
+  recon_loss_type: combined
+  use_inverse_losses: false
+
+# Early Stopping
+early_stopping:
+  patience: 10
+  monitor: val_total_loss
+  mode: min
+
+# Checkpointing
+checkpoint:
+  save_interval: 10
+  save_best: true
+  save_last: false
+
+# Logging
+logging:
+  log_interval: 10
+  use_tensorboard: false
+  use_wandb: false
+
+# Data Paths
+paths:
+  data_dir: data
+  output_dir: outputs/ablation
+  checkpoint_dir: outputs/ablation/checkpoints
+  log_dir: outputs/ablation/logs
+
+# Hardware
+hardware:
+  device: cuda
+  seed: 42

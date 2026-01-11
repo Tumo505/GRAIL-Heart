@@ -460,6 +460,8 @@ def main():
                         help='Override number of epochs per fold')
     parser.add_argument('--folds', type=str, default=None,
                         help='Specific folds to run (e.g., "0,1,2" or "LA,LV")')
+    parser.add_argument('--resume_dir', type=str, default=None,
+                        help='Resume into existing CV output directory (e.g., "outputs/cv_20260110_201121")')
     args = parser.parse_args()
     
     # Load configuration
@@ -481,10 +483,16 @@ def main():
     data_dir = Path(config['paths']['data_dir'])
     base_output_dir = Path(config['paths']['output_dir'])
     
-    # Create CV-specific output directory
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_dir = base_output_dir / f'cv_{timestamp}'
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # Create or resume CV output directory
+    if args.resume_dir:
+        output_dir = Path(args.resume_dir)
+        if not output_dir.exists():
+            raise ValueError(f"Resume directory does not exist: {output_dir}")
+        print(f"\n=== RESUMING CV into: {output_dir} ===")
+    else:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_dir = base_output_dir / f'cv_{timestamp}'
+        output_dir.mkdir(parents=True, exist_ok=True)
     
     # Save config
     with open(output_dir / 'config.yaml', 'w') as f:
@@ -543,23 +551,32 @@ def main():
     # Parse which folds to run
     folds_to_run = list(range(len(folds)))
     if args.folds:
-        if ',' in args.folds:
-            fold_specs = args.folds.split(',')
-            folds_to_run = []
-            for spec in fold_specs:
-                spec = spec.strip()
-                if spec.isdigit():
-                    folds_to_run.append(int(spec))
-                else:
-                    # Match by region name
-                    for i, fold in enumerate(folds):
-                        if fold['val_region'].upper() == spec.upper():
-                            folds_to_run.append(i)
+        fold_specs = [s.strip() for s in args.folds.split(',')]
+        folds_to_run = []
+        for spec in fold_specs:
+            if spec.isdigit():
+                folds_to_run.append(int(spec))
+            else:
+                # Match by region name
+                for i, fold in enumerate(folds):
+                    if fold['val_region'].upper() == spec.upper():
+                        folds_to_run.append(i)
     
     print(f"Running folds: {folds_to_run}")
     
-    # Train each fold
+    # Load existing fold metrics if resuming
     fold_metrics = []
+    partial_path = output_dir / 'fold_metrics_partial.yaml'
+    if args.resume_dir and partial_path.exists():
+        try:
+            with open(partial_path, 'r') as f:
+                fold_metrics = yaml.safe_load(f) or []
+            print(f"Loaded {len(fold_metrics)} existing fold metrics from resume directory")
+        except Exception as e:
+            print(f"Warning: Could not load existing metrics: {e}")
+            fold_metrics = []
+    
+    # Train each fold
     for fold_idx in folds_to_run:
         fold = folds[fold_idx]
         metrics = train_fold(
@@ -572,9 +589,12 @@ def main():
         )
         fold_metrics.append(metrics)
         
-        # Save intermediate results
+        # Save intermediate results (convert numpy to python types)
+        def to_python(d):
+            return {k: float(v) if hasattr(v, 'item') else v for k, v in d.items()}
+        clean_metrics = [to_python(m) for m in fold_metrics]
         with open(output_dir / 'fold_metrics_partial.yaml', 'w') as f:
-            yaml.dump(fold_metrics, f)
+            yaml.dump(clean_metrics, f)
     
     # Aggregate results
     if len(fold_metrics) > 1:

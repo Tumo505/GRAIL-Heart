@@ -1,0 +1,15 @@
+\begin{tabular}{lllrrrrr}
+\toprule
+Ablation Type & Baseline & Best Config & Baseline AUROC & Best AUROC & Δ AUROC & Baseline R² & Best R² \\
+\midrule
+Edge Types & dual_edges & dual_edges & 0.862 & 0.862 & 0.000 & 0.819 & 0.819 \\
+Gat Layers & 3_layers & 3_layers & 0.862 & 0.862 & 0.000 & 0.819 & 0.819 \\
+Attention Heads & 8_heads & 4_heads & 0.862 & 0.898 & 0.036 & 0.819 & 0.832 \\
+Tasks & all_tasks & lr_recon & 0.862 & 0.884 & 0.022 & 0.819 & 0.813 \\
+Graph Method & knn_6 & knn_6 & 0.862 & 0.862 & 0.000 & 0.819 & 0.819 \\
+Encoder & mlp_encoder & mlp_encoder & 0.862 & 0.862 & 0.000 & 0.819 & 0.819 \\
+Hidden Dim & dim_256 & dim_256 & 0.862 & 0.862 & 0.000 & 0.819 & 0.819 \\
+Decoder Type & residual_decoder & basic_decoder & 0.862 & 0.894 & 0.032 & 0.819 & -0.198 \\
+Dropout & dropout_0.1 & dropout_0.2 & 0.862 & 0.905 & 0.043 & 0.819 & 0.821 \\
+\bottomrule
+\end{tabular}

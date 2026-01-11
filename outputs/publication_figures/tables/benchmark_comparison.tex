@@ -1,0 +1,13 @@
+\begin{tabular}{lrrrrlr}
+\toprule
+Method & L-R AUROC & L-R AUPRC & Recon R² & Accuracy & Parameters & Time (s) \\
+\midrule
+grail_heart & 0.977 & 1.000 & 0.876 & NaN & 1469.62M & 0.108 \\
+graphsage & 0.841 & 0.999 & -0.079 & 0.046 & 1.55M & 0.022 \\
+mlp & 0.839 & 0.999 & -0.103 & 0.044 & 2.45M & 0.038 \\
+gcn & 0.807 & 0.998 & -0.109 & 0.046 & 1.36M & 0.024 \\
+single_task_gat & 0.804 & 0.998 & -0.886 & 0.039 & 1.36M & 0.027 \\
+cellphonedb & 0.624 & 0.994 & NaN & NaN & N/A & 0.674 \\
+cellchat & 0.429 & 0.993 & NaN & NaN & N/A & 0.788 \\
+\bottomrule
+\end{tabular}
