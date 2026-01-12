@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 1024  # Max upload size in MB (1GB)
+maxMessageSize = 1024  # Max message size in MB
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#e94560"
+backgroundColor = "#0f0f23"
+secondaryBackgroundColor = "#1a1a2e"
+textColor = "#ffffff"

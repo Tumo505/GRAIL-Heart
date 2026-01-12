@@ -115,13 +115,27 @@ GRAIL-Heart/
 
 ## Installation
 
+### Quick Install (Python Package)
+
+```bash
+pip install grail-heart
+```
+
+Or install from source:
+
+```bash
+git clone https://github.com/tumo505/GRAIL-Heart.git
+cd GRAIL-Heart
+pip install -e .
+```
+
 ### Requirements
 
-- Python 3.8+
+- Python 3.9+
 - CUDA 11.0+ (for GPU acceleration)
 - pip or conda
 
-### Setup
+### Full Setup (Development)
 
 1. Clone the repository:
 ```bash
@@ -140,8 +154,85 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install torch torchvision  # Install PyTorch with CUDA support
 pip install torch-geometric
 pip install omnipath           # For L-R database
-pip install -r requirements.txt
+pip install -e ".[all]"        # Install with all extras
 ```
+
+## Quick Start
+
+### Python API
+
+```python
+from grail_heart import load_pretrained
+
+# Load pretrained model
+model = load_pretrained()
+
+# Run forward modeling (Expression → L-R predictions)
+results = model.predict("my_cardiac_data.h5ad", mode="forward")
+print(results.top_lr_pairs.head(10))
+
+# Run inverse modeling (Fate → Causal L-R signals)  
+results = model.predict("my_cardiac_data.h5ad", mode="inverse")
+print(results.causal_scores.head(10))
+
+# Export results
+results.to_csv("lr_predictions.csv")
+results.to_json("network.json")
+```
+
+### Command Line Interface
+
+```bash
+# Run prediction
+grail-heart predict my_data.h5ad --output results.csv
+
+# Run inverse modeling
+grail-heart predict my_data.h5ad --mode inverse --output causal_results.csv
+
+# Show model info
+grail-heart info
+
+# Start web application
+grail-heart app
+```
+
+### Web Application
+
+Start the interactive web app for uploading and analyzing your own data:
+
+```bash
+# Option 1: Using CLI
+grail-heart app
+
+# Option 2: Using Streamlit directly
+streamlit run app/app.py
+```
+
+Then open http://localhost:8501 in your browser.
+
+**Features:**
+- Upload scRNA-seq data (h5ad, h5, CSV formats)
+- Run forward or inverse modeling
+- Interactive network visualization
+- Download results as CSV/JSON
+
+## Model Capabilities
+
+### Forward Modeling
+**Expression → L-R Predictions**
+
+Given gene expression data from cardiac cells, the model predicts which ligand-receptor interactions are active. This uses:
+- Graph neural networks to capture spatial context
+- Multi-head attention over cell neighborhoods  
+- Expression correlation with curated L-R databases
+
+### Inverse Modeling
+**Observed Fates → Causal L-R Signals**
+
+The key innovation of GRAIL-Heart. Given observed cell differentiation patterns, the model identifies which L-R interactions are **causally responsible** for driving those fates. This:
+- Goes beyond simple expression correlation
+- Identifies mechanosensitive pathways
+- Links molecular signaling to tissue patterning
 
 Key dependencies:
 - PyTorch 2.0+
