@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/
+
+# Large data files (mount as volumes instead)
+data/HeartCellAtlasv2/
+data/HumanCellAtlas/
+data/GSE*/
+data/10k-Heart-Cells*/
+data/1k-Heart-Cells*/
+data/doi.org*/
+
+# WandB logs
+wandb/
+
+# Outputs (mount checkpoint as volume)
+outputs/cv_*/
+outputs/ablation/
+outputs/analysis/
+outputs/enhanced_analysis/
+outputs/figures/
+outputs/logs/
+outputs/test/
+outputs/publication_figures/
+
+# Docs (not needed in container)
+docs/
+
+# Tests
+tests/
+
+# Misc
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
