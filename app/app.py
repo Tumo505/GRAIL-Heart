@@ -1,15 +1,17 @@
 """
 GRAIL-Heart Web Application
 
-Interactive web interface for analyzing cardiac single-cell RNA-seq data
-using the trained GRAIL-Heart model.
+Interactive web interface for analysing cardiac cell-cell communication
+using the trained GRAIL-Heart GNN model with inverse modelling.
 
 Features:
-1. Upload scRNA-seq data (h5ad, CSV, 10X formats)
-2. Forward Modeling: Predict L-R interaction scores
-3. Inverse Modeling: Identify causal L-R signals for cell fates
-4. Interactive network visualization
-5. Download results
+1. Explore pre-computed Heart Cell Atlas v2 results (6 regions)
+2. Upload custom spatial transcriptomics data (h5ad, h5, CSV)
+3. Forward Modelling: predict L-R interaction scores
+4. Inverse Modelling: identify causal L-R signals driving cell fates
+5. Interactive network and spatial visualisations
+6. Cross-region comparison dashboard
+7. Download results
 
 Run: streamlit run app/app.py
 """
@@ -22,734 +24,1210 @@ import scanpy as sc
 import anndata as ad
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from pathlib import Path
 import tempfile
-import json
 import sys
 import warnings
-from typing import Dict, List, Optional, Tuple, Any
-warnings.filterwarnings('ignore')
+from typing import Dict, List, Optional, Any
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+warnings.filterwarnings("ignore")
+
+# ── Resolve paths ──────────────────────────────────────────────────
+APP_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = APP_DIR.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from grail_heart.models import GRAILHeart
-from grail_heart.data.expanded_lr_database import (
-    get_expanded_lr_database,
-    filter_to_expressed_genes,
+from grail_heart.data.cellchat_database import (
+    get_omnipath_lr_database,
+    get_mechanosensitive_gene_sets,
+    build_pathway_gene_mask,
+    annotate_cardiac_pathways,
+    CARDIAC_PATHWAYS,
 )
 
+# ── Constants ──────────────────────────────────────────────────────
+CHECKPOINT_PATH = PROJECT_ROOT / "outputs" / "checkpoints" / "best.pt"
+DATA_DIR = PROJECT_ROOT / "data"
+PRECOMPUTED_DIR = PROJECT_ROOT / "outputs" / "enhanced_analysis"
+REGIONS = ["AX", "LA", "LV", "RA", "RV", "SP"]
+REGION_NAMES = {
+    "AX": "Apex",
+    "LA": "Left Atrium",
+    "LV": "Left Ventricle",
+    "RA": "Right Atrium",
+    "RV": "Right Ventricle",
+    "SP": "Septum",
+}
 
-def compute_lr_scores_simple(adata: ad.AnnData, lr_df: pd.DataFrame) -> pd.DataFrame:
+# ── Bioicons (CC-0 / CC-BY scientific icons from bioicons.com) ─────
+_BIO = "https://bioicons.com/icons"
+BIOICONS = {
+    "heart": f"{_BIO}/cc-by-3.0/Human_physiology/Servier/heart.svg",
+    "umap": f"{_BIO}/cc-0/Scientific_graphs/James-Lloyd/SingleCell_Clustering_DataReduction_UMAP.svg",
+    "dna": f"{_BIO}/cc-0/Nucleic_acids/Kumar/DNA.svg",
+    "microscope": f"{_BIO}/cc-by-3.0/Lab_apparatus/Servier/microscope.svg",
+    "receptor": f"{_BIO}/cc-by-3.0/Receptors_channels/Servier/receptor-membrane-ligand.svg",
+    "heatmap": f"{_BIO}/cc-by-4.0/Scientific_graphs/ChenxinLi/heatmap.svg",
+    "cardiomyocyte": f"{_BIO}/cc-0/Cell_types/Marnie-Maddock/simple_cardiomyocyte.svg",
+    "network": f"{_BIO}/cc-by-4.0/Chemo-_and_Bioinformatics/ChenxinLi/Network.svg",
+}
+
+
+def bioicon(name: str, size: int = 28) -> str:
+    """Return an inline HTML <img> tag for a bioicon from bioicons.com."""
+    url = BIOICONS.get(name, "")
+    if url:
+        return (
+            f'<img src="{url}" width="{size}" height="{size}" '
+            f'style="vertical-align:middle; margin-right:6px;">'
+        )
+    return ""
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Model loading
+# ═══════════════════════════════════════════════════════════════════
+
+@st.cache_resource(show_spinner="Loading GRAIL-Heart model …")
+def load_model(ckpt_path: str = str(CHECKPOINT_PATH)):
+    """Load pre-trained model, inferring architecture from state dict."""
+    ckpt = Path(ckpt_path)
+    if not ckpt.exists():
+        return None, f"Checkpoint not found: {ckpt}"
+
+    try:
+        checkpoint = torch.load(str(ckpt), map_location="cpu", weights_only=False)
+        state = checkpoint["model_state_dict"]
+
+        # ── Infer dims from state_dict ─────────────────────────────
+        # Encoder: gene_encoder.encoder.0.weight  →  shape [512, n_genes]
+        enc_key = [k for k in state if "gene_encoder.encoder.0.weight" in k]
+        n_genes = state[enc_key[0]].shape[1] if enc_key else 2000
+
+        # Cell types: predictor.cell_type_predictor.classifier.3.weight → [n_ct, 256]
+        ct_keys = [k for k in state if "cell_type_predictor" in k and k.endswith(".weight")]
+        n_cell_types = state[ct_keys[-1]].shape[0] if ct_keys else 10
+
+        # GAT layers: gat.layers.{i}.gat.*
+        gat_layer_ids = [
+            int(k.split(".")[2])
+            for k in state
+            if k.startswith("gat.layers.") and k.split(".")[2].isdigit()
+        ]
+        gat_layers = max(gat_layer_ids) + 1 if gat_layer_ids else 4
+
+        # Heads: gat.layers.0.gat.att_src  →  shape [n_edge_types, n_heads, head_dim]
+        head_key = [k for k in state if "gat.layers.0.gat.att_src" in k]
+        n_heads = state[head_key[0]].shape[1] if head_key else 4
+
+        # Hidden dim: gat.layers.0.gat.lin_src.weight  →  shape [hidden_dim, hidden_dim]
+        hid_key = [k for k in state if "gat.layers.0.gat.lin_src.weight" in k]
+        hidden_dim = state[hid_key[0]].shape[0] if hid_key else 256
+
+        has_inverse = any("inverse_module" in k for k in state)
+
+        # Pathway dimensions
+        # lr_target_decoder holds the main pathway matrix: [n_pathways, n_genes]
+        pw_key = [k for k in state if "lr_target_decoder.pathway_gene_matrix" in k]
+        n_pathways = state[pw_key[0]].shape[0] if pw_key else 0
+        # mechano_module.pathway_gene_mask: [n_mechano, n_genes]
+        mech_key = [k for k in state if "mechano_module.pathway_gene_mask" in k]
+        n_mechano = state[mech_key[0]].shape[0] if mech_key else 0
+
+        # Build placeholder masks (required by constructor)
+        kwargs: Dict[str, Any] = {}
+        if n_pathways > 0:
+            kwargs["pathway_gene_mask"] = torch.zeros(n_pathways, n_genes)
+        if n_mechano > 0:
+            kwargs["mechano_gene_mask"] = torch.zeros(n_mechano, n_genes)
+            kwargs["mechano_pathway_names"] = [f"mechano_{i}" for i in range(n_mechano)]
+
+        model = GRAILHeart(
+            n_genes=n_genes,
+            hidden_dim=hidden_dim,
+            n_gat_layers=gat_layers,
+            n_heads=n_heads,
+            n_cell_types=n_cell_types,
+            n_lr_pairs=None,
+            n_edge_types=2,
+            dropout=0.2,
+            tasks=["lr", "reconstruction", "cell_type"],
+            use_inverse_modelling=has_inverse,
+            n_fates=n_cell_types,
+            n_pathways=n_pathways if n_pathways else None,
+            n_mechano_pathways=n_mechano if n_mechano else None,
+            **kwargs,
+        )
+        model.load_state_dict(state, strict=False)
+        model.eval()
+
+        n_params = sum(p.numel() for p in model.parameters())
+        return model, {
+            "n_params": n_params,
+            "n_genes": n_genes,
+            "hidden_dim": hidden_dim,
+            "n_gat_layers": gat_layers,
+            "n_heads": n_heads,
+            "n_cell_types": n_cell_types,
+            "has_inverse": has_inverse,
+            "n_pathways": n_pathways,
+            "n_mechano": n_mechano,
+        }
+    except Exception as e:
+        return None, str(e)
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  L-R database
+# ═══════════════════════════════════════════════════════════════════
+
+@st.cache_data(show_spinner="Loading OmniPath L-R database …")
+def load_lr_database() -> pd.DataFrame:
+    """Load and annotate the OmniPath L-R database."""
+    lr = get_omnipath_lr_database()
+    lr = annotate_cardiac_pathways(lr)
+    return lr
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Pre-computed results
+# ═══════════════════════════════════════════════════════════════════
+
+@st.cache_data(show_spinner=False)
+def load_precomputed_scores(region: str) -> Optional[pd.DataFrame]:
+    """Load pre-computed L-R scores for a Heart Cell Atlas region."""
+    path = PRECOMPUTED_DIR / "tables" / f"{region}_lr_scores.csv"
+    if path.exists():
+        return pd.read_csv(path)
+    return None
+
+
+@st.cache_data(show_spinner=False)
+def load_cross_region_comparison() -> Optional[pd.DataFrame]:
+    path = PRECOMPUTED_DIR / "tables" / "cross_region_comparison.csv"
+    if path.exists():
+        return pd.read_csv(path)
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Upload helpers
+# ═══════════════════════════════════════════════════════════════════
+
+def process_uploaded_file(uploaded_file) -> ad.AnnData:
+    """Read an uploaded file into an AnnData object."""
+    ext = Path(uploaded_file.name).suffix.lower()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+        tmp.write(uploaded_file.getvalue())
+        tmp_path = tmp.name
+
+    try:
+        if ext == ".h5ad":
+            adata = sc.read_h5ad(tmp_path)
+        elif ext == ".h5":
+            adata = sc.read_10x_h5(tmp_path)
+        elif ext == ".csv":
+            df = pd.read_csv(tmp_path, index_col=0)
+            adata = ad.AnnData(df)
+        elif ext == ".tsv":
+            df = pd.read_csv(tmp_path, sep="\t", index_col=0)
+            adata = ad.AnnData(df)
+        else:
+            raise ValueError(f"Unsupported format: {ext}")
+        return adata
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+
+def _resolve_gene_symbols(adata: ad.AnnData) -> ad.AnnData:
+    """Convert var_names from Ensembl IDs to HGNC symbols when possible.
+
+    Checks for symbol columns in .var (SYMBOL, gene_symbol, gene_name, etc.).
+    If var_names already look like symbols, returns unchanged.
     """
-    Compute simple L-R interaction scores from expression data.
-    
-    Uses mean expression across cells and computes product scores.
-    """
-    # Get expression matrix
-    if hasattr(adata.X, 'toarray'):
-        expr = adata.X.toarray()
+    # Quick heuristic: if >50% of var_names start with 'ENS', they're Ensembl IDs
+    sample = list(adata.var_names[:200])
+    ens_frac = sum(1 for g in sample if str(g).startswith("ENS")) / max(len(sample), 1)
+
+    if ens_frac < 0.5:
+        # Already symbols (or at least not Ensembl IDs)
+        return adata
+
+    # Look for a symbol column in .var
+    symbol_col = None
+    for candidate in ["SYMBOL", "gene_symbol", "gene_symbols", "gene_name",
+                       "gene_short_name", "symbol", "name", "feature_name"]:
+        if candidate in adata.var.columns:
+            symbol_col = candidate
+            break
+
+    if symbol_col is None:
+        # No symbol column found — can't remap
+        return adata
+
+    symbols = adata.var[symbol_col].astype(str).values
+    # Drop genes with missing / empty / duplicate symbols
+    valid = np.array([
+        s != "" and s != "nan" and s != "None" and not s.startswith("ENS")
+        for s in symbols
+    ])
+
+    if valid.sum() < 500:
+        return adata
+
+    adata = adata[:, valid].copy()
+    adata.var_names = adata.var[symbol_col].values.astype(str)
+    adata.var_names_make_unique()
+    return adata
+
+
+def preprocess_adata(adata: ad.AnnData, n_top_genes: int = 2000) -> ad.AnnData:
+    """Standard preprocessing: filter -> normalize -> log1p -> HVG -> scale."""
+    adata = adata.copy()
+
+    # Resolve Ensembl IDs → HGNC gene symbols if needed
+    adata = _resolve_gene_symbols(adata)
+
+    sc.pp.filter_cells(adata, min_genes=200)
+    sc.pp.filter_genes(adata, min_cells=10)
+
+    # Normalize + log
+    if hasattr(adata.X, 'max'):
+        xmax = adata.X.max()
+        if hasattr(xmax, 'item'):
+            xmax = xmax.item()
     else:
-        expr = np.array(adata.X)
-    
-    gene_names = list(adata.var_names)
-    gene_to_idx = {g: i for i, g in enumerate(gene_names)}
-    
-    # Compute mean expression per gene
-    mean_expr = np.mean(expr, axis=0)
-    
-    results = []
-    for _, row in lr_df.iterrows():
-        ligand = row['ligand']
-        receptor = row['receptor']
-        
-        if ligand not in gene_to_idx or receptor not in gene_to_idx:
+        xmax = np.max(adata.X)
+    if xmax > 50:
+        sc.pp.normalize_total(adata, target_sum=1e4)
+        sc.pp.log1p(adata)
+
+    # Store raw log-normalised expression (non-negative, for L-R scoring)
+    adata.layers["log_norm"] = adata.X.copy()
+
+    # HVG selection
+    if adata.n_vars > n_top_genes + 500:
+        sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, subset=True)
+
+    # z-scale for model input
+    sc.pp.scale(adata, max_value=10)
+
+    return adata
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Inference on custom data
+# ═══════════════════════════════════════════════════════════════════
+
+def build_spatial_graph(coords: np.ndarray, k: int = 6) -> np.ndarray:
+    """Build symmetric kNN graph. Returns [2, n_edges]."""
+    from sklearn.neighbors import NearestNeighbors
+
+    nn = NearestNeighbors(n_neighbors=k, metric="euclidean")
+    nn.fit(coords)
+    _, idx = nn.kneighbors(coords)
+
+    edges_set = set()
+    src_list, dst_list = [], []
+    for i in range(len(coords)):
+        for j in idx[i]:
+            if i != j and (i, j) not in edges_set:
+                edges_set.add((i, j))
+                edges_set.add((j, i))
+                src_list.extend([i, j])
+                dst_list.extend([j, i])
+
+    return np.array([src_list, dst_list], dtype=np.int64)
+
+
+def compute_expression_scores(
+    adata: ad.AnnData,
+    lr_db: pd.DataFrame,
+) -> pd.DataFrame:
+    """Compute mean expression product scores for each L-R pair."""
+    if "log_norm" in adata.layers:
+        X = adata.layers["log_norm"]
+    else:
+        X = adata.X
+    if hasattr(X, "toarray"):
+        X = X.toarray()
+    X = np.array(X, dtype=np.float32)
+
+    gene_idx = {g: i for i, g in enumerate(adata.var_names)}
+    mean_expr = X.mean(axis=0)
+
+    rows = []
+    for _, row in lr_db.iterrows():
+        lig, rec = row["ligand"], row["receptor"]
+        if lig not in gene_idx or rec not in gene_idx:
             continue
-        
-        lig_idx = gene_to_idx[ligand]
-        rec_idx = gene_to_idx[receptor]
-        
-        lig_expr = mean_expr[lig_idx]
-        rec_expr = mean_expr[rec_idx]
-        
-        # Product score
-        score = lig_expr * rec_expr
-        
+        li, ri = gene_idx[lig], gene_idx[rec]
+        score = float(mean_expr[li] * mean_expr[ri])
         if score > 0:
-            results.append({
-                'ligand': ligand,
-                'receptor': receptor,
-                'pathway': row.get('pathway', 'Unknown'),
-                'function': row.get('function', 'Unknown'),
-                'mean_score': float(score),
-                'ligand_expr': float(lig_expr),
-                'receptor_expr': float(rec_expr),
+            rows.append({
+                "ligand": lig,
+                "receptor": rec,
+                "pathway": row.get("pathway", ""),
+                "function": row.get("function", ""),
+                "mean_score": score,
+                "ligand_expr": float(mean_expr[li]),
+                "receptor_expr": float(mean_expr[ri]),
             })
-    
-    df = pd.DataFrame(results)
-    if len(df) > 0:
-        df = df.sort_values('mean_score', ascending=False)
+    df = pd.DataFrame(rows)
+    if len(df):
+        df.sort_values("mean_score", ascending=False, inplace=True)
+        df.reset_index(drop=True, inplace=True)
     return df
 
-# Page config
+
+def run_model_inference(
+    model,
+    adata: ad.AnnData,
+    edge_index: np.ndarray,
+) -> Dict[str, np.ndarray]:
+    """Run the GRAIL-Heart GNN and return per-edge scores."""
+    from torch_geometric.data import Data
+
+    device = next(model.parameters()).device
+
+    # z-scaled expression for model input
+    X = adata.X
+    if hasattr(X, "toarray"):
+        X = X.toarray()
+    x = torch.tensor(np.array(X, dtype=np.float32), device=device)
+
+    # Spatial coords normalised to [0, 1]
+    coords = _get_spatial_coords(adata)
+    cmin, cmax = coords.min(0), coords.max(0)
+    rng = np.maximum(cmax - cmin, 1e-6)
+    coords_norm = (coords - cmin) / rng
+
+    ei = torch.tensor(edge_index, dtype=torch.long, device=device)
+    pos = torch.tensor(coords_norm, dtype=torch.float32, device=device)
+    et = torch.zeros(ei.shape[1], dtype=torch.long, device=device)
+    batch = torch.zeros(x.shape[0], dtype=torch.long, device=device)
+
+    # Cell type labels for MultiModalEncoder (gene 256 + spatial 64 + ct 64 = 384d)
+    if "cell_type" in adata.obs.columns:
+        ct_cats = adata.obs["cell_type"].astype("category")
+        y = torch.tensor(ct_cats.cat.codes.values, dtype=torch.long, device=device)
+    else:
+        y = torch.zeros(x.shape[0], dtype=torch.long, device=device)
+
+    data = Data(x=x, edge_index=ei, pos=pos, edge_type=et, batch=batch, y=y)
+
+    with torch.no_grad():
+        outputs = model(data)
+
+    results: Dict[str, np.ndarray] = {}
+
+    if "lr_scores" in outputs and outputs["lr_scores"] is not None:
+        scores = outputs["lr_scores"]
+        if scores.dim() > 1:
+            scores = scores.squeeze(-1)
+        results["forward_lr_scores"] = torch.sigmoid(scores).cpu().numpy()
+
+    if "causal_scores" in outputs and outputs["causal_scores"] is not None:
+        cs = outputs["causal_scores"]
+        if cs.dim() > 1:
+            cs = cs.mean(-1)
+        results["causal_scores"] = cs.cpu().numpy()
+
+    if "fate_logits" in outputs and outputs["fate_logits"] is not None:
+        results["fate_probs"] = (
+            torch.softmax(outputs["fate_logits"], dim=-1).cpu().numpy()
+        )
+
+    if "pathway_activation" in outputs and outputs["pathway_activation"] is not None:
+        results["pathway_activation"] = outputs["pathway_activation"].cpu().numpy()
+    if (
+        "mechano_pathway_activation" in outputs
+        and outputs["mechano_pathway_activation"] is not None
+    ):
+        results["mechano_activation"] = (
+            outputs["mechano_pathway_activation"].cpu().numpy()
+        )
+
+    return results
+
+
+def _get_spatial_coords(adata: ad.AnnData) -> np.ndarray:
+    """Extract spatial coordinates from AnnData."""
+    for key in ["spatial", "X_spatial"]:
+        if key in adata.obsm:
+            return np.array(adata.obsm[key], dtype=np.float32)
+    return np.zeros((adata.n_obs, 2), dtype=np.float32)
+
+
+def combine_scores(
+    expr_scores: pd.DataFrame,
+    model_out: Dict[str, np.ndarray],
+    adata: ad.AnnData,
+    edge_index: np.ndarray,
+) -> pd.DataFrame:
+    """Map per-edge causal scores -> per-L-R-pair causal scores.
+
+    Uses expression-gated 90th-percentile aggregation.
+    """
+    df = expr_scores.copy()
+    causal = model_out.get("causal_scores")
+    if causal is None or len(df) == 0:
+        df["causal_score"] = df["mean_score"]
+        return df
+
+    # Non-negative expression for gating
+    if "log_norm" in adata.layers:
+        X = adata.layers["log_norm"]
+    else:
+        X = adata.X
+    if hasattr(X, "toarray"):
+        X = X.toarray()
+    X = np.array(X, dtype=np.float32)
+    gene_idx = {g: i for i, g in enumerate(adata.var_names)}
+
+    src = edge_index[0]
+    dst = edge_index[1]
+    THRESHOLD = 0.5
+
+    pair_causal = []
+    for _, row in df.iterrows():
+        lig, rec = row["ligand"], row["receptor"]
+        li = gene_idx.get(lig)
+        ri = gene_idx.get(rec)
+        if li is None or ri is None:
+            pair_causal.append(0.0)
+            continue
+
+        lig_vals = X[src, li]
+        rec_vals = X[dst, ri]
+        mask = (lig_vals > THRESHOLD) & (rec_vals > THRESHOLD)
+
+        if mask.sum() < 5:
+            pair_causal.append(0.0)
+            continue
+
+        active_causal = causal[mask]
+        p90 = float(np.percentile(active_causal, 90))
+        expr_weight = float(np.sqrt(lig_vals[mask].mean() * rec_vals[mask].mean()))
+        pair_causal.append(p90 * expr_weight)
+
+    df["causal_score"] = pair_causal
+    mx = df["causal_score"].max()
+    if mx > 0:
+        df["causal_score"] /= mx
+
+    df.sort_values("causal_score", ascending=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Visualisation helpers
+# ═══════════════════════════════════════════════════════════════════
+
+def make_lr_bar_chart(df: pd.DataFrame, score_col: str, title: str, n: int = 20):
+    """Horizontal bar chart of top L-R pairs."""
+    top = df.nlargest(n, score_col).copy()
+    top["pair"] = top["ligand"] + " → " + top["receptor"]
+    fig = px.bar(
+        top, x=score_col, y="pair", orientation="h",
+        color=score_col, color_continuous_scale="Reds",
+        title=title,
+        labels={score_col: "Score", "pair": "L-R Pair"},
+    )
+    fig.update_layout(
+        yaxis=dict(categoryorder="total ascending"),
+        height=max(400, n * 24),
+        margin=dict(l=10, r=10, t=40, b=10),
+    )
+    return fig
+
+
+def make_pathway_chart(df: pd.DataFrame, score_col: str = "mean_score"):
+    """Bar chart grouped by pathway."""
+    if "pathway" not in df.columns or len(df) == 0:
+        return None
+    pw = df.groupby("pathway")[score_col].mean().sort_values(ascending=False).head(15)
+    if len(pw) == 0:
+        return None
+    fig = px.bar(
+        x=pw.values, y=pw.index, orientation="h",
+        color=pw.values, color_continuous_scale="Viridis",
+        title="Mean Score by Pathway",
+        labels={"x": score_col, "y": "Pathway"},
+    )
+    fig.update_layout(
+        yaxis=dict(categoryorder="total ascending"),
+        height=400,
+        margin=dict(l=10, r=10, t=40, b=10),
+    )
+    return fig
+
+
+def make_network_graph(df: pd.DataFrame, score_col: str, n: int = 40):
+    """Force-directed network of top L-R pairs."""
+    top = df.nlargest(n, score_col)
+    nodes = list(set(top["ligand"]).union(set(top["receptor"])))
+    if len(nodes) == 0:
+        return go.Figure()
+
+    np.random.seed(42)
+    pos = {nd: [np.random.randn(), np.random.randn()] for nd in nodes}
+
+    for _ in range(80):
+        forces = {nd: [0.0, 0.0] for nd in nodes}
+        for i, n1 in enumerate(nodes):
+            for n2 in nodes[i + 1:]:
+                dx = pos[n1][0] - pos[n2][0]
+                dy = pos[n1][1] - pos[n2][1]
+                d = max(0.05, (dx**2 + dy**2) ** 0.5)
+                f = 1.0 / d**2
+                forces[n1][0] += dx * f * 0.05
+                forces[n1][1] += dy * f * 0.05
+                forces[n2][0] -= dx * f * 0.05
+                forces[n2][1] -= dy * f * 0.05
+        for _, row in top.iterrows():
+            s, t = row["ligand"], row["receptor"]
+            dx = pos[t][0] - pos[s][0]
+            dy = pos[t][1] - pos[s][1]
+            d = max(0.05, (dx**2 + dy**2) ** 0.5)
+            f = d * 0.08
+            forces[s][0] += dx * f
+            forces[s][1] += dy * f
+            forces[t][0] -= dx * f
+            forces[t][1] -= dy * f
+        for nd in nodes:
+            pos[nd][0] += forces[nd][0] * 0.08
+            pos[nd][1] += forces[nd][1] * 0.08
+
+    # Edge traces
+    ex, ey = [], []
+    for _, row in top.iterrows():
+        s, t = row["ligand"], row["receptor"]
+        ex.extend([pos[s][0], pos[t][0], None])
+        ey.extend([pos[s][1], pos[t][1], None])
+
+    edge_trace = go.Scatter(
+        x=ex, y=ey, mode="lines",
+        line=dict(width=0.8, color="#bbb"), hoverinfo="none",
+    )
+
+    # Node traces (coloured by role)
+    ligands = set(top["ligand"])
+    receptors = set(top["receptor"])
+    colors = []
+    for nd in nodes:
+        if nd in ligands and nd in receptors:
+            colors.append("#9b59b6")
+        elif nd in ligands:
+            colors.append("#e74c3c")
+        else:
+            colors.append("#3498db")
+
+    node_trace = go.Scatter(
+        x=[pos[nd][0] for nd in nodes],
+        y=[pos[nd][1] for nd in nodes],
+        mode="markers+text",
+        text=nodes,
+        textposition="top center",
+        textfont=dict(size=9),
+        marker=dict(size=12, color=colors, line=dict(width=1, color="white")),
+        hoverinfo="text",
+    )
+
+    fig = go.Figure(
+        [edge_trace, node_trace],
+        layout=go.Layout(
+            title="L-R Interaction Network",
+            showlegend=False,
+            hovermode="closest",
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=0, r=0, t=35, b=0),
+            height=550,
+        ),
+    )
+    return fig
+
+
+def make_cross_region_heatmap(df: pd.DataFrame, n: int = 25):
+    """Heatmap of top L-R pairs across regions."""
+    top = df.nlargest(n, "mean_score")
+    top["pair"] = top["ligand"] + " → " + top["receptor"]
+    region_cols = [c for c in REGIONS if c in top.columns]
+    matrix = top.set_index("pair")[region_cols]
+    fig = px.imshow(
+        matrix,
+        color_continuous_scale="RdBu_r",
+        title="Top L-R Interactions Across Cardiac Regions",
+        labels=dict(x="Region", y="L-R Pair", color="Score"),
+        aspect="auto",
+    )
+    fig.update_layout(height=max(400, n * 22), margin=dict(l=10, r=10, t=40, b=10))
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  PAGE CONFIG & CSS
+# ═══════════════════════════════════════════════════════════════════
+
 st.set_page_config(
     page_title="GRAIL-Heart | Cardiac L-R Analysis",
-    page_icon="",
+    page_icon="❤️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #e94560;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    .sub-header {
-        font-size: 1rem;
-        color: #666;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .metric-card {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #f0f2f6;
-        border-radius: 8px;
-        padding: 10px 20px;
-    }
+.main-header { font-size:2.4rem; font-weight:700; color:#e94560;
+               text-align:center; margin-bottom:0.2rem; }
+.sub-header  { font-size:1rem; color:#888; text-align:center;
+               margin-bottom:1.5rem; }
+div[data-testid="stMetric"] {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 0.8rem 1rem; border-radius: 10px; color: white;
+}
+div[data-testid="stMetric"] label { color: #aaa !important; }
+div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #fff !important; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
+# ═══════════════════════════════════════════════════════════════════
+#  SESSION STATE
+# ═══════════════════════════════════════════════════════════════════
 
-class GRAILHeartApp:
-    """Main application class for GRAIL-Heart web interface."""
-    
-    def __init__(self):
-        self.model = None
-        self.lr_database = None
-        self.checkpoint_path = Path(__file__).parent.parent / 'outputs' / 'final_model' / 'checkpoints' / 'best.pt'
-        
-        # Initialize session state
-        if 'adata' not in st.session_state:
-            st.session_state.adata = None
-        if 'results' not in st.session_state:
-            st.session_state.results = None
-        if 'model_loaded' not in st.session_state:
-            st.session_state.model_loaded = False
-        if 'active_tab' not in st.session_state:
-            st.session_state.active_tab = 0
-            
-    @st.cache_resource
-    def load_model(_self):
-        """Load pre-trained GRAIL-Heart model."""
-        if not _self.checkpoint_path.exists():
-            return None, "Model checkpoint not found"
-            
-        try:
-            checkpoint = torch.load(_self.checkpoint_path, map_location='cpu', weights_only=False)
-            
-            # Model config from training (outputs/final_model/config.yaml)
-            # Checkpoint doesn't store config, so we use the training values
-            model_params = {
-                'hidden_dim': 256,
-                'n_gat_layers': 4,
-                'n_heads': 4,
-                'n_edge_types': 2,
-                'dropout': 0.2,
-            }
-            
-            state_dict = checkpoint['model_state_dict']
-            
-            # Detect n_genes from encoder
-            encoder_key = [k for k in state_dict.keys() if 'encoder.encoder.0.weight' in k]
-            if encoder_key:
-                n_genes = state_dict[encoder_key[0]].shape[1]
-            else:
-                n_genes = 2000
-            
-            # Detect n_cell_types from classifier
-            ct_key = [k for k in state_dict.keys() if 'cell_type_classifier' in k and 'weight' in k]
-            if ct_key:
-                n_cell_types = state_dict[ct_key[-1]].shape[0]
-            else:
-                n_cell_types = 10
-            
-            # Detect n_lr_pairs from checkpoint
-            lr_keys = [k for k in state_dict.keys() if 'lr_projections' in k and k.endswith('.weight')]
-            if lr_keys:
-                indices = [int(k.split('.')[-2]) for k in lr_keys]
-                n_lr_pairs = max(indices) + 1
-            else:
-                n_lr_pairs = 5000
-            
-            # Check for inverse modelling
-            has_inverse = any('inverse_module' in k for k in state_dict.keys())
-            
-            model = GRAILHeart(
-                n_genes=n_genes,
-                hidden_dim=model_params['hidden_dim'],
-                n_gat_layers=model_params['n_gat_layers'],
-                n_heads=model_params['n_heads'],
-                n_cell_types=n_cell_types,
-                n_lr_pairs=n_lr_pairs,
-                n_edge_types=model_params['n_edge_types'],
-                dropout=model_params['dropout'],
-                tasks=['lr', 'reconstruction', 'cell_type'],
-                use_inverse_modelling=has_inverse,
-                n_fates=n_cell_types,
-            )
-            
-            model.load_state_dict(checkpoint['model_state_dict'])
-            model.eval()
-            
-            return model, None
-            
-        except Exception as e:
-            return None, str(e)
-    
-    @st.cache_data
-    def load_lr_database(_self):
-        """Load L-R interaction database."""
-        return get_expanded_lr_database()
-    
-    def process_uploaded_file(self, uploaded_file) -> ad.AnnData:
-        """Process uploaded file into AnnData format."""
-        file_ext = Path(uploaded_file.name).suffix.lower()
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
-            tmp.write(uploaded_file.getvalue())
-            tmp_path = tmp.name
-        
-        try:
-            if file_ext == '.h5ad':
-                adata = sc.read_h5ad(tmp_path)
-            elif file_ext == '.h5':
-                adata = sc.read_10x_h5(tmp_path)
-            elif file_ext == '.csv':
-                df = pd.read_csv(tmp_path, index_col=0)
-                adata = ad.AnnData(df)
-            elif file_ext == '.tsv':
-                df = pd.read_csv(tmp_path, sep='\t', index_col=0)
-                adata = ad.AnnData(df)
-            else:
-                raise ValueError(f"Unsupported file format: {file_ext}")
-            
-            return adata
-            
-        finally:
-            Path(tmp_path).unlink()
-    
-    def preprocess_data(self, adata: ad.AnnData) -> ad.AnnData:
-        """Preprocess scRNA-seq data for model input."""
-        # Basic preprocessing
-        if adata.X.max() > 100:  # Likely not log-transformed
-            sc.pp.normalize_total(adata, target_sum=1e4)
-            sc.pp.log1p(adata)
-        
-        # Identify highly variable genes
-        if adata.n_vars > 3000:
-            sc.pp.highly_variable_genes(adata, n_top_genes=2000, subset=False)
-        
-        return adata
-    
-    def run_forward_inference(self, adata: ad.AnnData) -> Dict:
+if "adata" not in st.session_state:
+    st.session_state.adata = None
+if "upload_results" not in st.session_state:
+    st.session_state.upload_results = None
+if "upload_causal" not in st.session_state:
+    st.session_state.upload_causal = None
+
+# ═══════════════════════════════════════════════════════════════════
+#  SIDEBAR
+# ═══════════════════════════════════════════════════════════════════
+
+with st.sidebar:
+    st.markdown(f"## {bioicon('heart')} GRAIL-Heart", unsafe_allow_html=True)
+    st.caption("Graph-based Reconstruction of Artificial Intercellular Links")
+    st.markdown("---")
+
+    model_result = load_model()
+    if isinstance(model_result[1], dict):
+        model, info = model_result
+        st.success("Model loaded")
+        st.metric("Parameters", f"{info['n_params']/1e6:.1f} M")
+        st.metric(
+            "Architecture",
+            f"{info['n_gat_layers']}L / {info['n_heads']}H / {info['hidden_dim']}d",
+        )
+        st.metric(
+            "Inverse Modelling",
+            "Enabled" if info["has_inverse"] else "Disabled",
+        )
+        if info["n_pathways"]:
+            st.metric("Pathways", f"{info['n_pathways']} ({info['n_mechano']} mechano)")
+    else:
+        model = None
+        st.warning(f"Model: {model_result[1]}")
+
+    st.markdown("---")
+    st.markdown("### Resources")
+    st.markdown("[Documentation](https://github.com/Tumo505/GRAIL-Heart)")
+    st.markdown(
+        "[Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)"
+    )
+    st.markdown(
+        "[Preprint](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6137179)"
+    )
+
+# ═══════════════════════════════════════════════════════════════════
+#  HEADER
+# ═══════════════════════════════════════════════════════════════════
+
+st.markdown('<h1 class="main-header">GRAIL-Heart</h1>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="sub-header">'
+    "Causal Ligand-Receptor Analysis for Cardiac Spatial Transcriptomics"
+    "</p>",
+    unsafe_allow_html=True,
+)
+
+# ═══════════════════════════════════════════════════════════════════
+#  TABS
+# ═══════════════════════════════════════════════════════════════════
+
+tab_overview, tab_atlas, tab_upload, tab_forward, tab_inverse, tab_results = st.tabs(
+    [
+        "🫀 Overview",
+        "🗺️ Atlas Explorer",
+        "📤 Upload & Analyse",
+        "🔬 Forward Model",
+        "🔄 Inverse / Causal",
+        "📊 Results",
+    ]
+)
+
+# ── TAB 0: Overview ───────────────────────────────────────────────
+with tab_overview:
+    st.markdown("## What is GRAIL-Heart?")
+    st.markdown(
         """
-        Run FORWARD modeling: Expression → L-R predictions.
-        
-        This uses the trained GNN to predict L-R interaction strengths
-        based on gene expression patterns in the user's data.
-        """
-        results = {}
-        
-        # Get L-R database
-        lr_database = self.load_lr_database()
-        
-        # Filter to genes in user's data
-        available_genes = set(adata.var_names)
-        filtered_lr = filter_to_expressed_genes(lr_database, available_genes)
-        
-        results['n_lr_pairs'] = len(filtered_lr)
-        results['n_cells'] = adata.n_obs
-        results['n_genes'] = adata.n_vars
-        
-        # Check if any L-R pairs found
-        if len(filtered_lr) == 0:
-            results['error'] = "No L-R pairs found. Ensure your data has standard gene symbols (e.g., VEGFA, FLT1, TGFB1)."
-            results['top_lr_pairs'] = pd.DataFrame()
-            results['network'] = {'nodes': [], 'edges': []}
-            return results
-        
-        # Compute expression-based L-R scores
-        lr_scores = compute_lr_scores_simple(adata, filtered_lr)
-        
-        # Check if any scores computed
-        if len(lr_scores) == 0:
-            results['error'] = "No significant L-R interactions found in your data."
-            results['top_lr_pairs'] = pd.DataFrame()
-            results['network'] = {'nodes': [], 'edges': []}
-            return results
-        
-        # Get top scoring pairs
-        top_pairs = lr_scores.nlargest(100, 'mean_score')
-        results['top_lr_pairs'] = top_pairs
-        
-        # Build network data
-        nodes = set()
-        edges = []
-        for _, row in top_pairs.head(50).iterrows():
-            nodes.add(row['ligand'])
-            nodes.add(row['receptor'])
-            edges.append({
-                'source': row['ligand'],
-                'target': row['receptor'],
-                'weight': row['mean_score'],
-            })
-        
-        results['network'] = {
-            'nodes': list(nodes),
-            'edges': edges,
-        }
-        
-        # Pathway enrichment
-        if 'pathway' in filtered_lr.columns:
-            pathway_scores = lr_scores.groupby('pathway')['mean_score'].mean().sort_values(ascending=False)
-            results['pathway_scores'] = pathway_scores
-        
-        return results
-    
-    def run_inverse_inference(self, adata: ad.AnnData, cell_types: pd.Series = None) -> Dict:
-        """
-        Run INVERSE modeling: Observed fates → Causal L-R signals.
-        
-        This identifies which L-R interactions are CAUSALLY responsible
-        for driving the observed cell differentiation patterns.
-        """
-        results = {}
-        
-        # Load model for inverse inference
-        model, error = self.load_model()
-        
-        if model is None:
-            results['error'] = f"Model not available: {error}"
-            return results
-        
-        if not hasattr(model, 'inverse_module') or model.inverse_module is None:
-            results['warning'] = "Inverse modeling not available in this checkpoint. Using expression-based scoring."
-            # Fall back to expression-based causal scoring
-            return self.run_forward_inference(adata)
-        
-        # Get L-R database
-        lr_database = self.load_lr_database()
-        available_genes = set(adata.var_names)
-        filtered_lr = filter_to_expressed_genes(lr_database, available_genes)
-        
-        # Compute base L-R scores
-        lr_scores = compute_lr_scores_simple(adata, filtered_lr)
-        
-        # Check if we got results
-        if len(lr_scores) == 0:
-            results['error'] = "No L-R interactions found in your data."
-            results['causal_lr_pairs'] = pd.DataFrame()
-            return results
-        
-        # Use cell type info to weight by fate correlation
-        if cell_types is not None and 'cell_type' in adata.obs.columns:
-            # Weight L-R scores by their correlation with cell type differentiation
-            # This is a simplified version of inverse modeling
-            fate_weights = []
-            for ct in adata.obs['cell_type'].unique():
-                mask = adata.obs['cell_type'] == ct
-                ct_expr = adata[mask].X.mean(axis=0)
-                fate_weights.append(ct_expr)
-            
-            fate_matrix = np.array(fate_weights)
-            fate_variance = fate_matrix.var(axis=0)
-            
-            # Weight genes by their fate variance
-            gene_weights = pd.Series(
-                fate_variance.flatten() if hasattr(fate_variance, 'flatten') else fate_variance,
-                index=adata.var_names[:len(fate_variance)]
-            )
-            
-            # Apply weights to L-R scores
-            for i, row in lr_scores.iterrows():
-                lig_weight = gene_weights.get(row['ligand'], 1.0)
-                rec_weight = gene_weights.get(row['receptor'], 1.0)
-                lr_scores.at[i, 'causal_score'] = row['mean_score'] * (lig_weight + rec_weight) / 2
+GRAIL-Heart is a **Graph Neural Network** framework for analysing cell-cell
+communication in cardiac spatial transcriptomics data. It combines:
+
+| Component | Description |
+|-----------|-------------|
+| **Forward modelling** | Predict which ligand-receptor pairs are actively signalling |
+| **Inverse modelling** | Identify which L-R interactions *causally drive* cell fate decisions |
+| **Counterfactual analysis** | Remove individual interactions and measure fate change |
+| **Pathway grounding** | Link findings to MSigDB Hallmark + curated cardiac gene sets |
+
+### How to use this app
+
+1. **Atlas Explorer** — Browse pre-computed results from 6 Heart Cell Atlas v2 regions
+2. **Upload & Analyse** — Upload your own spatial transcriptomics dataset
+3. **Forward Model** — Compute expression-based L-R interaction scores
+4. **Inverse / Causal** — Run the full GNN inverse inference pipeline
+5. **Results** — View, compare, and download all results
+"""
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Cardiac Regions", "6")
+    c2.metric("Total Cells", "42,654")
+    c3.metric("L-R Pairs (OmniPath)", "22,234")
+    c4.metric("Pathways Grounded", "35")
+
+# ── TAB 1: Atlas Explorer ─────────────────────────────────────────
+with tab_atlas:
+    st.markdown(f"## {bioicon('umap')} Heart Cell Atlas v2 — Pre-computed Results", unsafe_allow_html=True)
+
+    cross_df = load_cross_region_comparison()
+    if cross_df is not None:
+        st.markdown("### Cross-Region Comparison")
+        fig = make_cross_region_heatmap(cross_df, n=25)
+        st.plotly_chart(fig, use_container_width=True)
+
+        with st.expander("📋 Top 30 L-R interactions across all regions", expanded=False):
+            st.dataframe(cross_df.nlargest(30, "mean_score"), use_container_width=True)
+
+    st.markdown("---")
+
+    st.markdown("### Per-Region Analysis")
+    sel_region = st.selectbox(
+        "Select cardiac region",
+        options=REGIONS,
+        format_func=lambda r: f"{r} — {REGION_NAMES[r]}",
+    )
+
+    region_df = load_precomputed_scores(sel_region)
+    if region_df is not None:
+        m1, m2, m3 = st.columns(3)
+        m1.metric("L-R Pairs Detected", f"{len(region_df):,}")
+        has_causal_col = "causal_score" in region_df.columns
+        if has_causal_col and len(region_df) > 0:
+            best_row = region_df.loc[region_df["causal_score"].idxmax()]
+            m2.metric("Top Causal Pair", f"{best_row['ligand']}→{best_row['receptor']}")
+            m3.metric("Max Causal Score", f"{best_row['causal_score']:.3f}")
         else:
-            lr_scores['causal_score'] = lr_scores['mean_score']
-        
-        # Get top causal pairs
-        top_causal = lr_scores.nlargest(100, 'causal_score')
-        results['causal_lr_pairs'] = top_causal
-        results['n_lr_pairs'] = len(filtered_lr)
-        
-        return results
-    
-    def create_network_visualization(self, network_data: Dict) -> go.Figure:
-        """Create interactive network visualization using Plotly."""
-        nodes = network_data['nodes']
-        edges = network_data['edges']
-        
-        # Create node positions using simple force layout simulation
-        n_nodes = len(nodes)
-        np.random.seed(42)
-        pos = {node: (np.random.randn() * 2, np.random.randn() * 2) for node in nodes}
-        
-        # Simple force-directed layout
-        for _ in range(50):
-            forces = {node: [0, 0] for node in nodes}
-            
-            # Repulsion between all nodes
-            for i, n1 in enumerate(nodes):
-                for n2 in nodes[i+1:]:
-                    dx = pos[n1][0] - pos[n2][0]
-                    dy = pos[n1][1] - pos[n2][1]
-                    dist = max(0.1, (dx**2 + dy**2)**0.5)
-                    force = 1 / dist**2
-                    forces[n1][0] += dx * force * 0.1
-                    forces[n1][1] += dy * force * 0.1
-                    forces[n2][0] -= dx * force * 0.1
-                    forces[n2][1] -= dy * force * 0.1
-            
-            # Attraction along edges
-            for edge in edges:
-                src, tgt = edge['source'], edge['target']
-                dx = pos[tgt][0] - pos[src][0]
-                dy = pos[tgt][1] - pos[src][1]
-                dist = max(0.1, (dx**2 + dy**2)**0.5)
-                force = dist * 0.1
-                forces[src][0] += dx * force
-                forces[src][1] += dy * force
-                forces[tgt][0] -= dx * force
-                forces[tgt][1] -= dy * force
-            
-            # Apply forces
-            for node in nodes:
-                pos[node] = (
-                    pos[node][0] + forces[node][0] * 0.1,
-                    pos[node][1] + forces[node][1] * 0.1
+            m2.metric("Top Pair", f"{region_df.iloc[0]['ligand']}→{region_df.iloc[0]['receptor']}")
+            m3.metric("Max Score", f"{region_df.iloc[0]['mean_score']:.3f}")
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            fig = make_lr_bar_chart(
+                region_df, "mean_score", f"{sel_region} — Top by Expression", n=15
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        with col_b:
+            if has_causal_col:
+                causal_df = region_df[region_df["causal_score"] > 0].copy()
+                if len(causal_df) > 0:
+                    fig = make_lr_bar_chart(
+                        causal_df, "causal_score",
+                        f"{sel_region} — Top by Causal Score", n=15,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+        score_col = (
+            "causal_score"
+            if has_causal_col and region_df["causal_score"].sum() > 0
+            else "mean_score"
+        )
+        fig = make_network_graph(region_df, score_col, n=35)
+        st.plotly_chart(fig, use_container_width=True)
+
+        pw_fig = make_pathway_chart(region_df, score_col)
+        if pw_fig:
+            st.plotly_chart(pw_fig, use_container_width=True)
+
+        csv = region_df.to_csv(index=False)
+        st.download_button(
+            f"Download {sel_region} scores (CSV)",
+            data=csv,
+            file_name=f"grail_heart_{sel_region}_scores.csv",
+            mime="text/csv",
+        )
+    else:
+        st.info(
+            f"No pre-computed results for {sel_region}. "
+            "Run `python enhanced_inference.py` first."
+        )
+
+# ── TAB 2: Upload & Analyse ───────────────────────────────────────
+with tab_upload:
+    st.markdown(f"## {bioicon('dna')} Upload Your Dataset", unsafe_allow_html=True)
+    st.markdown(
+        """
+Upload spatial transcriptomics data in any of these formats:
+
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| AnnData | `.h5ad` | **Recommended** — preserves cell type & spatial info |
+| 10X Genomics | `.h5` | Raw feature-barcode matrix |
+| CSV / TSV | `.csv`, `.tsv` | Gene expression matrix (genes × cells) |
+
+**Requirements:**
+- Gene symbols should be **standard HGNC** names (e.g. VEGFA, TGFB1, MMP2)
+- For spatial analysis, the `.h5ad` should contain `adata.obsm['spatial']`
+- For inverse modelling, cell type labels in `adata.obs['cell_type']` improve results
+"""
+    )
+
+    uploaded = st.file_uploader(
+        "Choose a file",
+        type=["h5ad", "h5", "csv", "tsv"],
+        help="Upload scRNA-seq / spatial transcriptomics data",
+    )
+
+    if uploaded is not None:
+        with st.spinner("Reading file …"):
+            try:
+                adata_raw = process_uploaded_file(uploaded)
+                st.success(f"✅ File loaded: **{uploaded.name}**")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+                adata_raw = None
+
+        if adata_raw is not None:
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Cells", f"{adata_raw.n_obs:,}")
+            c2.metric("Genes", f"{adata_raw.n_vars:,}")
+            c3.metric("File Size", f"{uploaded.size / 1e6:.1f} MB")
+
+            has_spatial = "spatial" in adata_raw.obsm or "X_spatial" in adata_raw.obsm
+            has_ct = "cell_type" in adata_raw.obs.columns
+
+            s1, s2 = st.columns(2)
+            s1.info(
+                "Spatial coords: "
+                + ("✅ Found" if has_spatial else "❌ Not found — will skip spatial graph")
+            )
+            s2.info(
+                "Cell types: "
+                + (
+                    f"✅ {adata_raw.obs['cell_type'].nunique()} types"
+                    if has_ct
+                    else "❌ Not annotated"
                 )
-        
-        # Create edge traces
-        edge_x, edge_y = [], []
-        edge_weights = []
-        for edge in edges:
-            x0, y0 = pos[edge['source']]
-            x1, y1 = pos[edge['target']]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
-            edge_weights.append(edge['weight'])
-        
-        edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=1, color='#888'),
-            hoverinfo='none',
-            mode='lines'
-        )
-        
-        # Create node trace
-        node_x = [pos[node][0] for node in nodes]
-        node_y = [pos[node][1] for node in nodes]
-        
-        node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers+text',
-            hoverinfo='text',
-            text=nodes,
-            textposition="top center",
-            marker=dict(
-                showscale=True,
-                colorscale='RdBu',
-                size=15,
-                color='#e94560',
-                line_width=2
             )
-        )
-        
-        fig = go.Figure(
-            data=[edge_trace, node_trace],
-            layout=go.Layout(
-                title='L-R Interaction Network',
-                showlegend=False,
-                hovermode='closest',
-                margin=dict(b=20, l=5, r=5, t=40),
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-            )
-        )
-        
-        return fig
-    
-    def run(self):
-        """Main application entry point."""
-        # Header
-        st.markdown('<h1 class="main-header">GRAIL-Heart</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="sub-header">Graph-based Reconstruction of Artificial Intercellular Links for Cardiac Analysis</p>', unsafe_allow_html=True)
-        
-        # Sidebar
-        with st.sidebar:
-            st.image("https://raw.githubusercontent.com/tumo505/GRAIL-Heart/main/docs/logo.png", width=200)
-            st.markdown("---")
-            
-            st.markdown("### Model Info")
-            model, error = self.load_model()
-            if model is not None:
-                st.success("Model loaded")
-                n_params = sum(p.numel() for p in model.parameters())
-                # st.metric("Parameters", f"{n_params/1e9:.2f}B")
-                has_inverse = hasattr(model, 'inverse_module') and model.inverse_module is not None
-                st.metric("Inverse Modeling", " Enabled" if has_inverse else "Disabled")
-            else:
-                st.warning(f"Model not loaded: {error}")
-            
-            st.markdown("---")
-            st.markdown("### Resources")
-            st.markdown("[Documentation](https://github.com/tumo505/GRAIL-Heart)")
-            st.markdown("[Interactive Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)")
-            st.markdown("[Paper](https://github.com/tumo505/GRAIL-Heart/blob/main/docs/MANUSCRIPT.md)")
-        
-        # Main content
-        tabs = st.tabs(["Upload Data", "Forward Modeling", "Inverse Modeling", "Results"])
-        
-        # Tab 1: Upload
-        with tabs[0]:
-            st.markdown("### Upload Your scRNA-seq Data")
-            st.markdown("""
-            Upload single-cell RNA-seq data from cardiac tissue. Supported formats:
-            - **h5ad**: AnnData format (recommended)
-            - **h5**: 10X Genomics format
-            - **CSV/TSV**: Gene expression matrix (genes × cells)
-            """)
-            
-            uploaded_file = st.file_uploader(
-                "Choose a file",
-                type=['h5ad', 'h5', 'csv', 'tsv'],
-                help="Upload your scRNA-seq data file"
-            )
-            
-            if uploaded_file is not None:
-                with st.spinner("Processing uploaded file..."):
+
+            if has_ct:
+                with st.expander("Cell type distribution"):
+                    ct_counts = adata_raw.obs["cell_type"].value_counts()
+                    fig = px.pie(
+                        values=ct_counts.values, names=ct_counts.index, title="Cell Types"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # Preprocessing options
+            st.markdown("### Preprocessing")
+            col1, col2 = st.columns(2)
+            with col1:
+                n_hvg = st.slider("Number of highly variable genes", 500, 5000, 2000, 100)
+            with col2:
+                k_neighbors = st.slider("k-nearest neighbours (graph)", 4, 15, 6)
+
+            if st.button("Preprocess Data", type="primary"):
+                with st.spinner("Preprocessing (QC → normalise → HVG → scale) …"):
                     try:
-                        adata = self.process_uploaded_file(uploaded_file)
-                        adata = self.preprocess_data(adata)
-                        st.session_state.adata = adata
-                        
-                        st.success("Data loaded successfully!")
-                        
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("Cells", f"{adata.n_obs:,}")
-                        col2.metric("Genes", f"{adata.n_vars:,}")
-                        col3.metric("Size", f"{uploaded_file.size / 1e6:.1f} MB")
-                        
-                        # Show preview
-                        with st.expander(" Data Preview"):
-                            st.dataframe(pd.DataFrame(
-                                adata.X[:5, :10] if hasattr(adata.X, 'toarray') else adata.X[:5, :10],
-                                index=adata.obs_names[:5],
-                                columns=adata.var_names[:10]
-                            ))
-                            
-                            if 'cell_type' in adata.obs.columns:
-                                st.markdown("**Cell Type Distribution:**")
-                                fig = px.pie(adata.obs, names='cell_type', title='Cell Types')
-                                st.plotly_chart(fig, use_container_width=True)
-                                
+                        adata_proc = preprocess_adata(adata_raw, n_top_genes=n_hvg)
+                        adata_proc.uns["k_neighbors"] = k_neighbors
+                        st.session_state.adata = adata_proc
+                        st.success(
+                            f"✅ Preprocessed: {adata_proc.n_obs:,} cells × "
+                            f"{adata_proc.n_vars:,} genes"
+                        )
                     except Exception as e:
-                        st.error(f" Error loading file: {str(e)}")
-            
-            # Demo data option
-            st.markdown("---")
-            st.markdown("###  Or Try Demo Data")
-            if st.button("Load Demo Cardiac Data"):
-                st.info("Loading demo Human Heart Cell Atlas data...")
-                # Load a small sample from the project's data
-                demo_path = Path(__file__).parent.parent / 'data' / 'HeartCellAtlasv2' / 'visium-OCT_LV_raw.h5ad'
-                if demo_path.exists():
-                    adata = sc.read_h5ad(demo_path)
-                    # Subsample for demo
-                    if adata.n_obs > 1000:
-                        sc.pp.subsample(adata, n_obs=1000)
-                    adata = self.preprocess_data(adata)
-                    st.session_state.adata = adata
-                    st.success(f"Demo data loaded: {adata.n_obs} cells, {adata.n_vars} genes")
-                else:
-                    st.warning("Demo data not available. Please upload your own data.")
-        
-        # Tab 2: Forward Modeling
-        with tabs[1]:
-            st.markdown("###  Forward Modeling")
-            st.markdown("""
-            **Expression → L-R Predictions**
-            
-            Forward modeling analyzes your gene expression data to predict ligand-receptor 
-            interaction strengths. This identifies which L-R pairs are actively signaling 
-            in your cardiac cells.
-            """)
-            
-            if st.session_state.adata is None:
-                st.warning(" Please upload data first")
+                        st.error(f"Preprocessing error: {e}")
+
+    # Demo data
+    st.markdown("---")
+    st.markdown(f"### {bioicon('cardiomyocyte', 24)} Or Load Demo Data", unsafe_allow_html=True)
+    demo_files = sorted(DATA_DIR.glob("HeartCellAtlasv2/visium-OCT_*_raw.h5ad"))
+    if demo_files:
+        demo_choice = st.selectbox(
+            "Select a Heart Cell Atlas region",
+            options=demo_files,
+            format_func=lambda p: p.stem.replace("visium-OCT_", "").replace("_raw", ""),
+        )
+        if st.button("Load Demo Region"):
+            with st.spinner("Loading …"):
+                adata = sc.read_h5ad(str(demo_choice))
+                adata_proc = preprocess_adata(adata)
+                adata_proc.uns["k_neighbors"] = 6
+                st.session_state.adata = adata_proc
+                st.success(
+                    f"✅ Loaded: {adata_proc.n_obs:,} cells × {adata_proc.n_vars:,} genes"
+                )
+    else:
+        st.caption("No demo data found in data/HeartCellAtlasv2/")
+
+
+# ── TAB 3: Forward Modelling ──────────────────────────────────────
+with tab_forward:
+    st.markdown(f"## {bioicon('microscope')} Forward Modelling", unsafe_allow_html=True)
+    st.markdown(
+        """
+**Gene Expression → L-R Interaction Scores**
+
+Computes ligand × receptor expression product scores using the
+OmniPath database (22,234 curated L-R pairs). This tells you
+*which interactions are expressed*, not which ones are *causal*.
+"""
+    )
+
+    if st.session_state.adata is None:
+        st.warning("⬆️ Upload and preprocess data first (Upload & Analyse tab)")
+    else:
+        adata = st.session_state.adata
+        st.info(f"Data ready: {adata.n_obs:,} cells × {adata.n_vars:,} genes")
+
+        if st.button("Run Forward Analysis", type="primary"):
+            with st.spinner("Loading L-R database & scoring …"):
+                lr_db = load_lr_database()
+                expr_scores = compute_expression_scores(adata, lr_db)
+
+            if len(expr_scores) == 0:
+                st.error(
+                    "No L-R pairs matched your gene names. "
+                    "Check that you have HGNC symbols."
+                )
             else:
-                adata = st.session_state.adata
-                
-                col1, col2 = st.columns([2, 1])
-                
-                with col1:
-                    min_expression = st.slider(
-                        "Minimum expression threshold",
-                        min_value=0.0, max_value=1.0, value=0.1,
-                        help="Genes below this threshold are considered not expressed"
+                st.session_state.upload_results = expr_scores
+                st.session_state.upload_causal = None
+                st.success(f"✅ {len(expr_scores)} L-R pairs scored")
+
+                fig = make_lr_bar_chart(
+                    expr_scores, "mean_score", "Top L-R Interactions (Expression)", 20
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+                fig2 = make_network_graph(expr_scores, "mean_score", 30)
+                st.plotly_chart(fig2, use_container_width=True)
+
+
+# ── TAB 4: Inverse / Causal ───────────────────────────────────────
+with tab_inverse:
+    st.markdown(f"## {bioicon('receptor')} Inverse Modelling — Causal L-R Inference", unsafe_allow_html=True)
+    st.markdown(
+        """
+**L-R Interactions → Cell Fate Prediction → Counterfactual Scoring**
+
+This runs the full GRAIL-Heart GNN pipeline:
+1. Build spatial graph from your data
+2. Run forward + inverse pass through the trained model
+3. For each edge, measure how much removing it changes predicted cell fates
+4. Aggregate per-edge causal scores to per-L-R-pair scores
+"""
+    )
+
+    if st.session_state.adata is None:
+        st.warning("⬆️ Upload and preprocess data first (Upload & Analyse tab)")
+    elif model is None:
+        st.error("Model not loaded — check sidebar for errors")
+    else:
+        adata = st.session_state.adata
+        has_spatial = "spatial" in adata.obsm or "X_spatial" in adata.obsm
+
+        st.info(
+            f"Data: {adata.n_obs:,} cells × {adata.n_vars:,} genes | "
+            f"Spatial: {'✅' if has_spatial else '❌'} | "
+            f"Model: {sum(p.numel() for p in model.parameters())/1e6:.1f}M params"
+        )
+
+        if not has_spatial:
+            st.warning(
+                "No spatial coordinates found. A random graph will be used. "
+                "For best results, upload a .h5ad with `obsm['spatial']`."
+            )
+
+        if st.button("Run Causal Inference", type="primary"):
+            progress = st.progress(0, text="Building spatial graph …")
+
+            # 1. Build graph
+            coords = _get_spatial_coords(adata)
+            if not has_spatial:
+                coords = np.random.randn(adata.n_obs, 2).astype(np.float32) * 100
+
+            k = adata.uns.get("k_neighbors", 6)
+            edge_index = build_spatial_graph(coords, k=k)
+            progress.progress(20, text=f"Graph: {edge_index.shape[1]:,} edges")
+
+            # 2. Expression scores
+            progress.progress(30, text="Computing expression scores …")
+            lr_db = load_lr_database()
+            expr_scores = compute_expression_scores(adata, lr_db)
+
+            if len(expr_scores) == 0:
+                st.error("No L-R pairs matched. Ensure HGNC gene symbols.")
+            else:
+                # 3. Model inference
+                progress.progress(50, text="Running GNN forward + inverse pass …")
+                try:
+                    device = torch.device(
+                        "cuda" if torch.cuda.is_available() else "cpu"
                     )
-                    
-                with col2:
-                    top_n = st.selectbox(
-                        "Number of top L-R pairs",
-                        options=[50, 100, 200, 500],
-                        index=1
+                    model.to(device)
+                    model_out = run_model_inference(model, adata, edge_index)
+
+                    progress.progress(80, text="Combining scores …")
+                    combined = combine_scores(expr_scores, model_out, adata, edge_index)
+                    st.session_state.upload_results = combined
+                    st.session_state.upload_causal = model_out
+
+                    progress.progress(100, text="✅ Done!")
+
+                    st.success(
+                        f"✅ Causal inference complete — {len(combined)} L-R pairs, "
+                        f"{edge_index.shape[1]:,} edges"
                     )
-                
-                if st.button(" Run Forward Analysis", type="primary"):
-                    with st.spinner("Running forward modeling..."):
-                        results = self.run_forward_inference(adata)
-                        st.session_state.results = results
-                        st.session_state.results['type'] = 'forward'
-                    st.success(" Analysis complete! Go to the **Results** tab to view your L-R predictions.")
-                    st.balloons()
-        
-        # Tab 3: Inverse Modeling
-        with tabs[2]:
-            st.markdown("### Inverse Modeling")
-            st.markdown("""
-            **Observed Fates → Causal L-R Signals**
-            
-            Inverse modeling goes beyond simple expression correlation to identify which 
-            L-R interactions are **causally responsible** for driving cell differentiation. 
-            
-            This is the key innovation of GRAIL-Heart:
-            - Identifies mechanosensitive pathways
-            - Links molecular signaling to tissue patterning
-            - Discovers regulatory drivers of cardiac development
-            """)
-            
-            if st.session_state.adata is None:
-                st.warning("Please upload data first")
-            else:
-                adata = st.session_state.adata
-                
-                # Check for cell type annotations
-                has_cell_types = 'cell_type' in adata.obs.columns
-                
-                if has_cell_types:
-                    st.success(f" Cell type annotations found: {adata.obs['cell_type'].nunique()} types")
-                else:
-                    st.info(" No cell type annotations found. Results will be based on expression patterns only.")
-                
-                if st.button(" Run Inverse Analysis", type="primary"):
-                    with st.spinner("Running inverse modeling..."):
-                        cell_types = adata.obs.get('cell_type', None)
-                        results = self.run_inverse_inference(adata, cell_types)
-                        st.session_state.results = results
-                        st.session_state.results['type'] = 'inverse'
-                    st.success(" Inverse analysis complete! Go to the **Results** tab to view causal L-R signals.")
-                    st.balloons()
-        
-        # Tab 4: Results
-        with tabs[3]:
-            st.markdown("###  Analysis Results")
-            
-            if st.session_state.results is None:
-                st.info("Run forward or inverse modeling to see results")
-            else:
-                results = st.session_state.results
-                analysis_type = results.get('type', 'forward')
-                
-                st.markdown(f"**Analysis Type:** {'🔬 Forward' if analysis_type == 'forward' else '🔄 Inverse'} Modeling")
-                
-                # Metrics
-                col1, col2, col3 = st.columns(3)
-                col1.metric("L-R Pairs Analyzed", f"{results.get('n_lr_pairs', 0):,}")
-                col2.metric("Cells", f"{results.get('n_cells', 0):,}")
-                col3.metric("Genes", f"{results.get('n_genes', 0):,}")
-                
-                # Top L-R pairs table
-                st.markdown("#### Top Predicted L-R Interactions")
-                
-                score_col = 'causal_score' if analysis_type == 'inverse' else 'mean_score'
-                df_key = 'causal_lr_pairs' if analysis_type == 'inverse' else 'top_lr_pairs'
-                
-                if df_key in results and len(results[df_key]) > 0:
-                    top_df = results[df_key].head(20)
-                    
-                    # Build display columns based on what exists
-                    display_cols = []
-                    for col in ['ligand', 'receptor', score_col, 'pathway', 'function']:
-                        if col in top_df.columns:
-                            display_cols.append(col)
-                    
-                    if len(display_cols) > 0:
-                        rename_map = {score_col: 'Score'} if score_col in display_cols else {}
-                        st.dataframe(
-                            top_df[display_cols].rename(columns=rename_map),
-                            use_container_width=True
+
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        fig = make_lr_bar_chart(
+                            combined, "causal_score",
+                            "Top Causal L-R Interactions", 15,
                         )
-                        
-                        # Download button
-                        csv = results[df_key].to_csv(index=False)
-                        st.download_button(
-                            label=" Download Full Results (CSV)",
-                            data=csv,
-                            file_name=f"grail_heart_{analysis_type}_results.csv",
-                            mime="text/csv"
+                        st.plotly_chart(fig, use_container_width=True)
+                    with c2:
+                        fig = make_network_graph(combined, "causal_score", 30)
+                        st.plotly_chart(fig, use_container_width=True)
+
+                    # Pathway activation
+                    if "pathway_activation" in model_out:
+                        st.markdown("### Pathway Activation (mean across cells)")
+                        pa = model_out["pathway_activation"].mean(axis=0)
+                        fig = px.bar(
+                            x=pa,
+                            y=[f"Pathway {i}" for i in range(len(pa))],
+                            orientation="h",
+                            title="Mean Pathway Activation",
                         )
-                    else:
-                        st.warning("No displayable columns in results")
-                elif 'error' in results:
-                    st.error(results['error'])
-                else:
-                    st.warning("No L-R interactions found in your data")
-                
-                # Network visualization
-                if 'network' in results:
-                    st.markdown("#### L-R Interaction Network")
-                    fig = self.create_network_visualization(results['network'])
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Pathway analysis
-                if 'pathway_scores' in results:
-                    st.markdown("#### Pathway Enrichment")
-                    pathway_df = pd.DataFrame({
-                        'Pathway': results['pathway_scores'].index,
-                        'Score': results['pathway_scores'].values
-                    }).head(15)
-                    
-                    fig = px.bar(
-                        pathway_df, x='Score', y='Pathway', orientation='h',
-                        title='Top Enriched Signaling Pathways',
-                        color='Score', color_continuous_scale='RdBu_r'
+                        fig.update_layout(
+                            yaxis=dict(categoryorder="total ascending")
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"Inference error: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
+
+
+# ── TAB 5: Results ─────────────────────────────────────────────────
+with tab_results:
+    st.markdown(f"## {bioicon('heatmap')} Results & Download", unsafe_allow_html=True)
+
+    if st.session_state.upload_results is None:
+        st.info("Run Forward or Inverse analysis to see results here.")
+    else:
+        df = st.session_state.upload_results
+
+        has_causal = "causal_score" in df.columns and df["causal_score"].sum() > 0
+        analysis_type = "Inverse (Causal)" if has_causal else "Forward (Expression)"
+        st.markdown(f"**Analysis type:** {analysis_type}")
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("L-R Pairs Scored", f"{len(df):,}")
+        if has_causal:
+            c2.metric(
+                "Top Causal Pair",
+                f"{df.iloc[0]['ligand']}→{df.iloc[0]['receptor']}",
+            )
+            c3.metric("Max Causal Score", f"{df.iloc[0]['causal_score']:.3f}")
+        else:
+            c2.metric(
+                "Top Expression Pair",
+                f"{df.iloc[0]['ligand']}→{df.iloc[0]['receptor']}",
+            )
+            c3.metric("Max Score", f"{df.iloc[0]['mean_score']:.4f}")
+
+        # Full table
+        st.markdown("### All Scored L-R Pairs")
+        score_col = "causal_score" if has_causal else "mean_score"
+        display_cols = [
+            c
+            for c in [
+                "ligand", "receptor", "pathway", "mean_score",
+                "causal_score", "ligand_expr", "receptor_expr",
+            ]
+            if c in df.columns
+        ]
+        st.dataframe(df[display_cols].head(200), use_container_width=True, height=400)
+
+        # Charts
+        col_a, col_b = st.columns(2)
+        with col_a:
+            fig = make_lr_bar_chart(df, score_col, f"Top 20 by {score_col}", 20)
+            st.plotly_chart(fig, use_container_width=True)
+        with col_b:
+            pw_fig = make_pathway_chart(df, score_col)
+            if pw_fig:
+                st.plotly_chart(pw_fig, use_container_width=True)
+
+        fig = make_network_graph(df, score_col, 40)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Downloads
+        st.markdown("### Download")
+        c1, c2 = st.columns(2)
+        with c1:
+            csv = df.to_csv(index=False)
+            st.download_button(
+                "Download L-R Scores (CSV)",
+                data=csv,
+                file_name="grail_heart_lr_scores.csv",
+                mime="text/csv",
+            )
+        with c2:
+            if has_causal and st.session_state.upload_causal:
+                out = st.session_state.upload_causal
+                if "causal_scores" in out:
+                    causal_csv = pd.DataFrame({
+                        "edge_idx": range(len(out["causal_scores"])),
+                        "causal_score": out["causal_scores"],
+                    }).to_csv(index=False)
+                    st.download_button(
+                        "Download Per-Edge Causal Scores (CSV)",
+                        data=causal_csv,
+                        file_name="grail_heart_edge_causal_scores.csv",
+                        mime="text/csv",
                     )
-                    fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-                    st.plotly_chart(fig, use_container_width=True)
 
-
-def main():
-    app = GRAILHeartApp()
-    app.run()
-
-
-if __name__ == "__main__":
-    main()
+# ── Footer ─────────────────────────────────────────────────────────
+st.markdown("---")
+st.caption(
+    "GRAIL-Heart v2.0 — Graph-based Reconstruction of Artificial Intercellular Links | "
+    "[GitHub](https://github.com/Tumo505/GRAIL-Heart) | "
+    "Trained on Heart Cell Atlas v2 (42,654 cells, 6 regions)"
+)
