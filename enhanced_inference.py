@@ -95,64 +95,116 @@ class EnhancedInference:
         self.all_lr_scores = []
         
     def load_model(self) -> None:
-        """Load trained model from checkpoint."""
+        """Load trained model from checkpoint.
+        
+        Infers all architecture dimensions directly from the state_dict
+        so that loading works even when the checkpoint has no saved config.
+        """
         print(f"Loading model from {self.checkpoint_path}")
         
         checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=False)
         
-        # Get model config
+        # Get model config (may be empty for older checkpoints)
         config = checkpoint.get('config', {})
         model_config = config.get('model', {})
         
-        # Get metadata for n_cell_types
-        n_cell_types = config.get('n_cell_types', checkpoint.get('n_cell_types', 10))
-        n_genes = config.get('n_genes', checkpoint.get('n_genes', 2000))
-        
-        # Check if checkpoint has inverse modelling
         state_dict = checkpoint['model_state_dict']
-        self.has_inverse = any('inverse_module' in k for k in state_dict.keys())
         
+        # --- Infer architecture from state_dict ---
+        # n_genes: first encoder weight is [encoder_dim_0, n_genes]
+        n_genes = state_dict['gene_encoder.encoder.0.weight'].shape[1]
+        
+        # hidden_dim: from JK projection output
+        hidden_dim = state_dict.get('gat.jk_proj.weight', torch.zeros(256, 1)).shape[0]
+        
+        # n_gat_layers: count unique layer indices in gat.layers.*
+        gat_layer_nums = set(
+            int(k.split('.')[2]) for k in state_dict
+            if k.startswith('gat.layers.') and k.split('.')[2].isdigit()
+        )
+        n_gat_layers = len(gat_layer_nums) if gat_layer_nums else 4
+        
+        # n_heads: from attention tensor shape [n_edge_types, n_heads, head_dim]
+        att_key = 'gat.layers.0.gat.att_src'
+        if att_key in state_dict:
+            n_edge_types, n_heads, _ = state_dict[att_key].shape
+        else:
+            n_edge_types, n_heads = 2, 4
+        
+        # n_cell_types: from cell_type_encoder embedding
+        ct_key = 'multimodal_encoder.cell_type_encoder.embedding.weight'
+        n_cell_types = state_dict[ct_key].shape[0] if ct_key in state_dict else 10
+        
+        # encoder_dims: infer from encoder weight shapes
+        enc0 = state_dict.get('gene_encoder.encoder.0.weight')
+        enc1 = state_dict.get('gene_encoder.encoder.4.weight')
+        encoder_dims = [enc0.shape[0], enc1.shape[0]] if enc0 is not None and enc1 is not None else [512, 256]
+        
+        # n_lr_pairs: None if no lr_projections in state_dict
+        lr_proj_keys = [k for k in state_dict if 'lr_projections' in k and k.endswith('.weight')]
+        if lr_proj_keys:
+            indices = [int(k.split('.')[-2]) for k in lr_proj_keys]
+            n_lr_pairs = max(indices) + 1
+            print(f"  Detected {n_lr_pairs} L-R pairs from checkpoint")
+        else:
+            n_lr_pairs = None
+            print("  No per-pair L-R projections (shared scorer)")
+        
+        # Inverse modelling detection
+        self.has_inverse = any('inverse_module' in k for k in state_dict)
         if self.has_inverse:
             print("  Detected inverse modelling components in checkpoint")
         else:
             print("  No inverse modelling in checkpoint (using forward-only mode)")
         
-        # Infer n_lr_pairs from checkpoint state dict to ensure match
-        lr_keys = [k for k in state_dict.keys() if 'lr_projections' in k and k.endswith('.weight')]
-        if lr_keys:
-            indices = [int(k.split('.')[-2]) for k in lr_keys]
-            n_lr_pairs = max(indices) + 1
-            print(f"  Detected {n_lr_pairs} L-R pairs from checkpoint")
-        else:
-            # Fallback to expanded database
-            from grail_heart.data.expanded_lr_database import get_expanded_lr_database
-            lr_pairs_for_model = get_expanded_lr_database()
-            n_lr_pairs = config.get('n_lr_pairs', checkpoint.get('n_lr_pairs', len(lr_pairs_for_model)))
+        # n_pathways / n_mechano_pathways from inverse module tensors
+        n_pathways = 20
+        n_mechano_pathways = 8
+        if self.has_inverse:
+            pw_key = 'inverse_module.lr_target_decoder.pathway_gene_matrix'
+            if pw_key in state_dict:
+                n_pathways = state_dict[pw_key].shape[0]
+            mech_key = 'inverse_module.mechano_module.pathway_gene_mask'
+            if mech_key in state_dict:
+                n_mechano_pathways = state_dict[mech_key].shape[0]
+            print(f"  Pathways: {n_pathways} total, {n_mechano_pathways} mechano")
         
-        # Initialize model with matching parameters
+        # n_fates from fate classifier output
+        fate_key = 'inverse_module.cell_fate_head.fate_classifier.4.weight'
+        n_fates = state_dict[fate_key].shape[0] if fate_key in state_dict else n_cell_types
+        
+        print(f"  Architecture: {n_genes} genes, {hidden_dim}d, {n_gat_layers} GAT layers, "
+              f"{n_heads} heads, {n_cell_types} cell types")
+        
+        # Initialize model with inferred parameters
         tasks = model_config.get('tasks', ['lr', 'reconstruction', 'cell_type'])
         
         self.model = GRAILHeart(
             n_genes=n_genes,
-            hidden_dim=model_config.get('hidden_dim', 256),
-            n_gat_layers=model_config.get('n_gat_layers', 3),
-            n_heads=model_config.get('n_heads', 8),
+            hidden_dim=hidden_dim,
+            n_gat_layers=n_gat_layers,
+            n_heads=n_heads,
             n_cell_types=n_cell_types,
-            n_edge_types=model_config.get('n_edge_types', 2),
-            encoder_dims=model_config.get('encoder_dims', [512, 256]),
-            dropout=model_config.get('dropout', 0.1),
+            n_edge_types=n_edge_types,
+            encoder_dims=encoder_dims,
+            dropout=model_config.get('dropout', 0.2),
             use_spatial=model_config.get('use_spatial', True),
             use_variational=model_config.get('use_variational', False),
             tasks=tasks,
             n_lr_pairs=n_lr_pairs,
-            # Enable inverse modelling if checkpoint has it
             use_inverse_modelling=self.has_inverse,
-            n_fates=n_cell_types,  # Use cell types as fate categories
-            n_pathways=model_config.get('n_pathways', 20),
-            n_mechano_pathways=model_config.get('n_mechano_pathways', 8),
+            n_fates=n_fates,
+            n_pathways=n_pathways,
+            n_mechano_pathways=n_mechano_pathways,
+            # Masks loaded from state_dict; pass None so constructor
+            # creates matching-sized parameters, then load_state_dict overwrites.
+            pathway_gene_mask=None,
+            mechano_gene_mask=None,
+            mechano_pathway_names=None,
+            decoder_type=model_config.get('decoder_type', 'residual'),
         )
         
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.load_state_dict(state_dict, strict=False)
         self.model.to(self.device)
         self.model.eval()
         
@@ -235,11 +287,14 @@ class EnhancedInference:
         
         print(f"  Spatial graph: {edge_index.shape[1]} edges")
         
-        # Get expression matrix
+        # Get expression matrix (z-scored for model input)
         if hasattr(adata.X, 'toarray'):
             expression = adata.X.toarray()
         else:
             expression = np.array(adata.X)
+        
+        # Get unscaled expression (log-normalized, non-negative) for weighting
+        expression_unscaled = np.array(adata.layers['log_norm'])
         
         # ===============================================
         # RUN MODEL INFERENCE (Forward + Inverse)
@@ -262,7 +317,10 @@ class EnhancedInference:
         )
         
         # Combine expression scores with model scores
-        lr_scores = self._combine_scores(expr_lr_scores, model_scores, expressed_lr)
+        lr_scores = self._combine_scores(
+            expr_lr_scores, model_scores, expressed_lr,
+            expression=expression_unscaled, gene_names=gene_names, edge_index=edge_index,
+        )
         
         print(f"  Detected interactions: {len(lr_scores)}")
         
@@ -420,34 +478,109 @@ class EnhancedInference:
         expr_scores: pd.DataFrame,
         model_scores: Dict[str, torch.Tensor],
         expressed_lr: pd.DataFrame,
+        expression: Optional[np.ndarray] = None,
+        gene_names: Optional[List[str]] = None,
+        edge_index: Optional[np.ndarray] = None,
     ) -> pd.DataFrame:
         """
         Combine expression-based scores with model-based causal scores.
         
-        The final score combines:
-        1. Expression product (baseline)
-        2. Model causal scores (if available)
-        3. Inverse-inferred importance (if available)
+        Maps per-edge causal scores to per-L-R-pair causal scores using:
+        1. Unscaled (log-norm) expression to identify edges where the pair
+           is actually active (both ligand at source and receptor at target
+           are expressed above threshold).
+        2. 90th-percentile of causal scores at active edges — captures the
+           strongest causal signal for each pair rather than the mean, which
+           converges to the global average across 100K+ edges.
+        3. Pair activity fraction — what fraction of potential edges actually
+           carry this pair — combined with percentile for final score.
         """
         lr_scores = expr_scores.copy()
+        
+        # Helper to aggregate per-edge scores to per-pair scores
+        def _aggregate_edge_to_pair(
+            per_edge: np.ndarray,
+            expr: np.ndarray,
+            names: List[str],
+            eidx: np.ndarray,
+            pairs_df: pd.DataFrame,
+            expr_threshold: float = 0.5,
+            percentile: float = 90.0,
+        ) -> List[float]:
+            """Map per-edge scores to per-pair using expression-gated percentile."""
+            gene_to_idx = {g: i for i, g in enumerate(names)}
+            src = eidx[0]
+            dst = eidx[1]
+            
+            pair_scores = []
+            for _, row in pairs_df.iterrows():
+                lig_idx = gene_to_idx.get(row['ligand'])
+                rec_idx = gene_to_idx.get(row['receptor'])
+                
+                if lig_idx is None or rec_idx is None:
+                    pair_scores.append(0.0)
+                    continue
+                
+                # Expression of ligand at source, receptor at target
+                # (unscaled log-norm: 0 = not expressed, >0 = expressed)
+                lig_expr = expr[src, lig_idx]
+                rec_expr = expr[dst, rec_idx]
+                
+                # Select edges where BOTH genes are expressed above threshold
+                active_mask = (lig_expr > expr_threshold) & (rec_expr > expr_threshold)
+                n_active = active_mask.sum()
+                
+                if n_active < 3:
+                    # Too few active edges — unreliable, use expression score
+                    pair_scores.append(0.0)
+                    continue
+                
+                # Percentile of causal scores at active edges
+                active_causal = per_edge[active_mask]
+                pct_score = float(np.percentile(active_causal, percentile))
+                
+                # Weight by activity fraction (what fraction of edges carry this pair)
+                activity_frac = n_active / len(per_edge)
+                
+                # Final score: percentile * sqrt(activity) to balance rare-but-strong
+                # pairs against broadly-active ones
+                final = pct_score * np.sqrt(activity_frac)
+                pair_scores.append(final)
+            
+            return pair_scores
         
         # Add causal scores if available
         if model_scores and 'causal_lr_scores' in model_scores:
             causal = model_scores['causal_lr_scores'].numpy()
-            # Aggregate causal scores per L-R pair
-            # For now, use mean causal score as a proxy
-            mean_causal = float(causal.mean()) if len(causal) > 0 else 0.0
-            lr_scores['causal_score'] = lr_scores['mean_score'] * (1 + mean_causal)
+            
+            if expression is not None and gene_names is not None and edge_index is not None:
+                causal_per_pair = _aggregate_edge_to_pair(
+                    causal, expression, gene_names, edge_index, lr_scores,
+                )
+                lr_scores['causal_score'] = causal_per_pair
+            else:
+                lr_scores['causal_score'] = lr_scores['mean_score'] * float(causal.mean())
         
+        # Add inverse importance scores if available
         if model_scores and 'inferred_lr_importance' in model_scores:
             importance = model_scores['inferred_lr_importance'].numpy()
-            mean_importance = float(importance.mean()) if len(importance) > 0 else 0.0
-            lr_scores['inverse_importance'] = mean_importance
-            # Weight the final score by inverse importance
-            if 'causal_score' not in lr_scores.columns:
-                lr_scores['causal_score'] = lr_scores['mean_score'] * (1 + mean_importance)
+            
+            if expression is not None and gene_names is not None and edge_index is not None:
+                imp_per_pair = _aggregate_edge_to_pair(
+                    importance, expression, gene_names, edge_index, lr_scores,
+                )
+                lr_scores['inverse_importance'] = imp_per_pair
             else:
-                lr_scores['causal_score'] = lr_scores['causal_score'] * (1 + mean_importance * 0.5)
+                mean_imp = float(importance.mean()) if len(importance) > 0 else 0.0
+                lr_scores['inverse_importance'] = mean_imp
+            
+            # Blend inverse importance into causal score
+            if 'causal_score' not in lr_scores.columns:
+                lr_scores['causal_score'] = lr_scores['mean_score'] * (1 + lr_scores['inverse_importance'])
+            else:
+                lr_scores['causal_score'] = (
+                    lr_scores['causal_score'] * 0.7 + lr_scores['inverse_importance'] * 0.3
+                )
         
         return lr_scores
     
@@ -467,7 +600,14 @@ class EnhancedInference:
         sc.pp.highly_variable_genes(adata, n_top_genes=2000)
         adata = adata[:, adata.var.highly_variable].copy()
         
-        # Scale
+        # Save log-normalized expression BEFORE z-scoring (non-negative)
+        # for expression-weighted causal score aggregation
+        if hasattr(adata.X, 'toarray'):
+            adata.layers['log_norm'] = adata.X.toarray().copy()
+        else:
+            adata.layers['log_norm'] = np.array(adata.X).copy()
+        
+        # Scale (z-score) for model input
         sc.pp.scale(adata, max_value=10)
         
         return adata
@@ -800,22 +940,20 @@ def main():
     print("  3. Combine expression-based and model-based scores")
     print()
     
-    # Find best checkpoint - prefer CV checkpoints with inverse modelling
+    # Find best checkpoint - prefer standard training best.pt
     import os
     from pathlib import Path
-    cv_dirs = sorted([d for d in Path('outputs').iterdir() if d.name.startswith('cv_')])
-    if cv_dirs:
-        latest_cv = cv_dirs[-1]
-        # Use best fold checkpoint (RV typically performs best)
-        checkpoint_path = latest_cv / 'fold_4_RV' / 'checkpoints' / 'best.pt'
-        if not checkpoint_path.exists():
-            # Fallback to fold_0
-            checkpoint_path = latest_cv / 'fold_0_AX' / 'checkpoints' / 'best.pt'
-        checkpoint_path = str(checkpoint_path)
-        print(f"Using CV checkpoint: {checkpoint_path}")
-    else:
-        checkpoint_path = 'outputs/checkpoints/best.pt'
-        print(f"Using standard checkpoint: {checkpoint_path}")
+    checkpoint_path = 'outputs/checkpoints/best.pt'
+    if not Path(checkpoint_path).exists():
+        # Fallback: look for CV checkpoints
+        cv_dirs = sorted([d for d in Path('outputs').iterdir() if d.name.startswith('cv_')])
+        if cv_dirs:
+            latest_cv = cv_dirs[-1]
+            checkpoint_path = latest_cv / 'fold_4_RV' / 'checkpoints' / 'best.pt'
+            if not checkpoint_path.exists():
+                checkpoint_path = latest_cv / 'fold_0_AX' / 'checkpoints' / 'best.pt'
+            checkpoint_path = str(checkpoint_path)
+    print(f"Using checkpoint: {checkpoint_path}")
     
     data_dir = 'data'
     output_dir = 'outputs/enhanced_analysis'

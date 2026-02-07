@@ -313,7 +313,11 @@ class GRAILHeartTrainer:
         # Cell type targets (also used as cell fate target for inverse modelling)
         if hasattr(data, 'y') and data.y is not None:
             targets['cell_types'] = data.y
-            targets['cell_fate'] = data.y  # Cell fate target for inverse modelling
+            # Prefer soft neighbourhood composition as fate target (WP3)
+            if hasattr(data, 'neighborhood_composition') and data.neighborhood_composition is not None:
+                targets['cell_fate'] = data.neighborhood_composition  # [N, C] soft
+            else:
+                targets['cell_fate'] = data.y  # fallback: hard labels
             
         # Differentiation stage targets (for inverse modelling)
         if hasattr(data, 'differentiation_stage') and data.differentiation_stage is not None:

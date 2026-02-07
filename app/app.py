@@ -512,9 +512,9 @@ class GRAILHeartApp:
             if model is not None:
                 st.success("Model loaded")
                 n_params = sum(p.numel() for p in model.parameters())
-                st.metric("Parameters", f"{n_params/1e9:.2f}B")
+                # st.metric("Parameters", f"{n_params/1e9:.2f}B")
                 has_inverse = hasattr(model, 'inverse_module') and model.inverse_module is not None
-                st.metric("Inverse Modeling", " Enabled" if has_inverse else "❌ Disabled")
+                st.metric("Inverse Modeling", " Enabled" if has_inverse else "Disabled")
             else:
                 st.warning(f"Model not loaded: {error}")
             

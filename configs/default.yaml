@@ -36,6 +36,9 @@ data:
   batch_size: 1  # Full graph per batch
   num_workers: 0
   max_files: null  # null = no limit (use all files), or set integer to limit
+  # MSigDB Hallmark gene sets for pathway grounding
+  msigdb_path: data/h.all.v2026.1.Hs.txt
+  include_hallmark: true
 
 # Training Configuration
 training:
@@ -64,8 +67,10 @@ loss:
   use_inverse_losses: true
   fate_weight: 0.5
   causal_weight: 0.3
-  differentiation_weight: 0.2
+  differentiation_weight: 0.5   # Increased for CytoTRACE ranking loss
   gene_target_weight: 0.3
+  cycle_weight: 0.3              # WP5: cycle-consistency loss
+  pathway_grounding_weight: 0.1  # WP1: pathway grounding KL loss
 
 # Early Stopping
 early_stopping:

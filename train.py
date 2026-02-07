@@ -28,7 +28,13 @@ from grail_heart.data import (
     SpatialGraphBuilder,
     LigandReceptorDatabase,
 )
-from grail_heart.data.cellchat_database import get_omnipath_lr_database, filter_for_cardiac
+from grail_heart.data.cellchat_database import (
+    get_omnipath_lr_database,
+    filter_for_cardiac,
+    get_mechanosensitive_gene_sets,
+    build_pathway_gene_mask,
+    CARDIAC_PATHWAYS,
+)
 from grail_heart.models import GRAILHeart, create_grail_heart
 from grail_heart.training import (
     GRAILHeartLoss,
@@ -227,6 +233,7 @@ def prepare_data(config: dict, data_dir: Path):
         'n_cell_types': max_cell_types,  # Use max across all regions
         'gene_names': datasets[0].gene_names,
         'n_lr_pairs': len(lr_pairs),  # Number of L-R pairs from database
+        'data_dir': str(data_dir),     # For resolving msigdb path later
     }
     
     return train_loader, val_loader, test_loader, metadata
@@ -238,7 +245,10 @@ def create_model(config: dict, metadata: dict) -> GRAILHeart:
     model_config = config['model'].copy()
     model_config['n_genes'] = metadata['n_genes']
     model_config['n_cell_types'] = metadata['n_cell_types']
-    model_config['n_lr_pairs'] = metadata.get('n_lr_pairs', None)
+    # NOTE: Do NOT pass n_lr_pairs to the model — it creates one Linear(hidden, hidden)
+    # per LR pair which is 22K×65K = 1.46B params.  The MLP/bilinear scorer works
+    # without per-pair projections.
+    model_config['n_lr_pairs'] = None
     
     # Extract n_genes before passing to create_grail_heart
     n_genes = model_config.pop('n_genes')
@@ -248,7 +258,43 @@ def create_model(config: dict, metadata: dict) -> GRAILHeart:
         # Use n_cell_types as n_fates if not specified
         if model_config.get('n_fates') is None:
             model_config['n_fates'] = metadata['n_cell_types']
-    
+
+    # ── Build biologically-grounded pathway masks (WP1) ──────────────
+    pathway_gene_mask = None
+    mechano_gene_mask = None
+    mechano_pathway_names = None
+
+    if model_config.get('use_inverse_modelling', False):
+        data_config = config.get('data', {})
+        msigdb_path = data_config.get('msigdb_path', None)
+        include_hallmark = data_config.get('include_hallmark', True)
+
+        gene_sets = get_mechanosensitive_gene_sets(
+            msigdb_path=msigdb_path,
+            include_hallmark=include_hallmark,
+        )
+        gene_names = metadata.get('gene_names', [])
+        if gene_sets and gene_names:
+            mask_np = build_pathway_gene_mask(gene_sets, gene_names)
+            pathway_gene_mask = torch.tensor(mask_np, dtype=torch.float32)
+            # Mechanosensitive subset: curated + Hippo + Piezo + Integrin
+            mechano_keys = [k for k in sorted(gene_sets.keys())
+                           if k in ('YAP_TAZ_Hippo', 'Piezo_Mechano', 'Integrin_FAK')
+                           or k in CARDIAC_PATHWAYS]
+            mechano_sets = {k: gene_sets[k] for k in mechano_keys if k in gene_sets}
+            if mechano_sets:
+                mechano_np = build_pathway_gene_mask(mechano_sets, gene_names)
+                mechano_gene_mask = torch.tensor(mechano_np, dtype=torch.float32)
+                mechano_pathway_names = sorted(mechano_sets.keys())
+                model_config['n_mechano_pathways'] = len(mechano_pathway_names)
+            model_config['n_pathways'] = mask_np.shape[0]
+            print(f"Pathway masks: {mask_np.shape[0]} total pathways, "
+                  f"{len(mechano_pathway_names) if mechano_pathway_names else 0} mechano pathways")
+
+    model_config['pathway_gene_mask'] = pathway_gene_mask
+    model_config['mechano_gene_mask'] = mechano_gene_mask
+    model_config['mechano_pathway_names'] = mechano_pathway_names
+
     model = create_grail_heart(n_genes=n_genes, config=model_config)
     
     return model
@@ -347,8 +393,10 @@ def main():
         use_inverse_losses=loss_config.get('use_inverse_losses', True),
         fate_weight=loss_config.get('fate_weight', 0.5),
         causal_weight=loss_config.get('causal_weight', 0.3),
-        differentiation_weight=loss_config.get('differentiation_weight', 0.2),
+        differentiation_weight=loss_config.get('differentiation_weight', 0.5),
         gene_target_weight=loss_config.get('gene_target_weight', 0.3),
+        cycle_weight=loss_config.get('cycle_weight', 0.3),
+        pathway_grounding_weight=loss_config.get('pathway_grounding_weight', 0.1),
     )
     
     # Create trainer

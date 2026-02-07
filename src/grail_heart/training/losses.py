@@ -362,6 +362,8 @@ class GRAILHeartLoss(nn.Module):
         causal_weight: float = 0.3,
         differentiation_weight: float = 0.2,
         gene_target_weight: float = 0.3,
+        cycle_weight: float = 0.3,
+        pathway_grounding_weight: float = 0.1,
     ):
         super().__init__()
         
@@ -380,6 +382,9 @@ class GRAILHeartLoss(nn.Module):
         self.causal_weight = causal_weight
         self.differentiation_weight = differentiation_weight
         self.gene_target_weight = gene_target_weight
+
+        self.cycle_weight = cycle_weight
+        self.pathway_grounding_weight = pathway_grounding_weight
         
         self.lr_loss = LRInteractionLoss(pos_weight=2.0)
         self.recon_loss = ReconstructionLoss(
@@ -488,37 +493,72 @@ class GRAILHeartLoss(nn.Module):
                 )
                 loss_dict['contrastive_loss'] = contra_loss
                 total_loss = total_loss + self.contrastive_weight * contra_loss
-        
-        # ===== INVERSE MODELLING LOSSES (NEW) =====
-        # "This inverse modelling framework will elucidate mechanosensitive pathways
-        # that modulate early-stage cardiac tissue patterning"
-        
+
+
         if self.use_inverse_losses:
-            # 1. Cell fate prediction loss (use cell_types as fate labels)
-            if 'fate_logits' in outputs and 'cell_types' in targets:
-                fate_loss = F.cross_entropy(outputs['fate_logits'], targets['cell_types'])
+            # Cell fate prediction loss
+            #    If target is soft (neighbourhood composition [N, C]) → KL divergence
+            #    If target is hard (class indices [N]) → cross-entropy (fallback)
+            if 'fate_logits' in outputs and 'cell_fate' in targets:
+                fate_target = targets['cell_fate']
+                fate_logits = outputs['fate_logits']
+                if fate_target.dim() == 2:
+                    # Align dimensions: different graphs may have different
+                    # numbers of cell types in their neighbourhood composition
+                    n_pred = fate_logits.size(1)
+                    n_tgt = fate_target.size(1)
+                    if n_pred > n_tgt:
+                        fate_target = F.pad(fate_target, (0, n_pred - n_tgt))
+                    elif n_tgt > n_pred:
+                        fate_logits = F.pad(fate_logits, (0, n_tgt - n_pred),
+                                            value=-1e9)
+                    # Soft labels → KL(target || softmax(logits))
+                    log_probs = F.log_softmax(fate_logits, dim=-1)
+                    # Clamp target for numerical safety
+                    fate_target_safe = fate_target.clamp(min=1e-8)
+                    # Re-normalise after padding so it sums to 1
+                    fate_target_safe = fate_target_safe / fate_target_safe.sum(
+                        dim=-1, keepdim=True)
+                    fate_loss = F.kl_div(log_probs, fate_target_safe, reduction='batchmean',
+                                         log_target=False)
+                else:
+                    # Hard labels → CE (backward compat)
+                    fate_loss = F.cross_entropy(fate_logits, fate_target)
                 loss_dict['fate_loss'] = fate_loss
                 total_loss = total_loss + self.fate_weight * fate_loss
-                
-            # 2. Differentiation score supervision (if available)
+
+            # Differentiation score — pairwise ranking loss
+            #    Instead of MSE to a pseudo-uniform target, enforce *ordinal
+            #    consistency*: if cell i is more differentiated than cell j,
+            #    the model's predicted score should reflect that.
             if 'differentiation_score' in outputs and 'differentiation_stage' in targets:
-                diff_loss = F.mse_loss(
-                    outputs['differentiation_score'].squeeze(),
-                    targets['differentiation_stage'],
-                )
-                loss_dict['differentiation_loss'] = diff_loss
-                total_loss = total_loss + self.differentiation_weight * diff_loss
-                
-            # 3. Causal sparsity regularization
-            # Encourage sparse causal attributions (most L-R pairs are not causal)
+                pred_diff = outputs['differentiation_score'].squeeze()
+                true_diff = targets['differentiation_stage']
+                # Margin-based ranking loss on random pairs
+                n_pairs = min(512, pred_diff.size(0) // 2)
+                if n_pairs > 0:
+                    idx = torch.randperm(pred_diff.size(0), device=pred_diff.device)[:2 * n_pairs]
+                    i_idx, j_idx = idx[:n_pairs], idx[n_pairs:]
+                    diff_ij = (true_diff[i_idx] - true_diff[j_idx]).sign()  # +1, 0, -1
+                    pred_ij = pred_diff[i_idx] - pred_diff[j_idx]
+                    # Margin ranking: want pred_ij * diff_ij > margin
+                    rank_loss = F.margin_ranking_loss(
+                        pred_diff[i_idx], pred_diff[j_idx],
+                        diff_ij, margin=0.1,
+                    )
+                else:
+                    rank_loss = F.mse_loss(pred_diff, true_diff)
+                loss_dict['differentiation_loss'] = rank_loss
+                total_loss = total_loss + self.differentiation_weight * rank_loss
+
+            # Causal sparsity regularization
             if 'causal_lr_scores' in outputs:
                 causal_sparsity = outputs['causal_lr_scores'].mean()
                 loss_dict['causal_sparsity'] = causal_sparsity
                 total_loss = total_loss + self.causal_weight * causal_sparsity
-                
-            # 4. Target gene prediction loss
+
+            # Target gene prediction loss
             if 'predicted_expression_from_lr' in outputs and 'expression' in targets:
-                # Use destination cell expression as target
                 src, dst = targets.get('edge_index', (None, None))
                 if dst is not None:
                     target_expression = targets['expression'][dst]
@@ -528,6 +568,24 @@ class GRAILHeartLoss(nn.Module):
                     )
                     loss_dict['gene_target_loss'] = gene_target_loss
                     total_loss = total_loss + self.gene_target_weight * gene_target_loss
+
+            # Cycle-consistency loss
+            #    Reconstructed LR ≈ original sigmoid(lr_scores)
+            if 'cycle_reconstructed_lr' in outputs and 'lr_scores' in outputs:
+                lr_target = torch.sigmoid(outputs['lr_scores']).detach()
+                cycle_recon = outputs['cycle_reconstructed_lr']
+                # Align lengths (cycle may only cover a subset of edges)
+                min_len = min(cycle_recon.size(0), lr_target.size(0))
+                cycle_loss = F.mse_loss(cycle_recon[:min_len], lr_target[:min_len])
+                loss_dict['cycle_loss'] = cycle_loss
+                total_loss = total_loss + self.cycle_weight * cycle_loss
+
+            # 6. Pathway grounding loss
+            #    From LRToTargetGeneDecoder.pathway_grounding_loss()
+            if 'pathway_grounding_loss' in outputs:
+                pg_loss = outputs['pathway_grounding_loss']
+                loss_dict['pathway_grounding_loss'] = pg_loss
+                total_loss = total_loss + self.pathway_grounding_weight * pg_loss
             
         loss_dict['total_loss'] = total_loss
         

@@ -92,6 +92,10 @@ class GRAILHeart(nn.Module):
         n_fates: Optional[int] = None,
         n_pathways: int = 20,
         n_mechano_pathways: int = 8,
+        # Biologically grounded gene-set masks (WP1)
+        pathway_gene_mask: Optional[torch.Tensor] = None,
+        mechano_gene_mask: Optional[torch.Tensor] = None,
+        mechano_pathway_names: Optional[List[str]] = None,
     ):
         super().__init__()
         
@@ -170,6 +174,9 @@ class GRAILHeart(nn.Module):
                 n_fates=actual_n_fates,
                 n_pathways=n_pathways,
                 n_mechano_pathways=n_mechano_pathways,
+                pathway_gene_mask=pathway_gene_mask,
+                mechano_gene_mask=mechano_gene_mask,
+                mechano_pathway_names=mechano_pathway_names,
             )
         
         # Variational KL loss weight
@@ -304,6 +311,14 @@ class GRAILHeart(nn.Module):
                 if 'predicted_expression_from_lr' in inverse_outputs:
                     outputs['predicted_expression_from_lr'] = inverse_outputs['predicted_expression_from_lr']
                     outputs['delta_expression'] = inverse_outputs['delta_expression']
+
+                # WP1: Pathway grounding regularisation
+                if 'pathway_grounding_loss' in inverse_outputs:
+                    outputs['pathway_grounding_loss'] = inverse_outputs['pathway_grounding_loss']
+
+                # WP5: Cycle-consistency LR reconstruction
+                if 'cycle_reconstructed_lr' in inverse_outputs:
+                    outputs['cycle_reconstructed_lr'] = inverse_outputs['cycle_reconstructed_lr']
             except Exception as e:
                 # Log but don't fail if inverse modelling has issues
                 import warnings
@@ -509,6 +524,10 @@ def create_grail_heart(
         'n_fates': None,  # Will default to n_cell_types
         'n_pathways': 20,
         'n_mechano_pathways': 8,
+        # Biologically-grounded pathway masks (WP1)
+        'pathway_gene_mask': None,
+        'mechano_gene_mask': None,
+        'mechano_pathway_names': None,
     }
     
     if config is not None:

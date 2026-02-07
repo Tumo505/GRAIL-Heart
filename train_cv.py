@@ -37,7 +37,12 @@ from grail_heart.data import (
     SpatialTranscriptomicsDataset,
     SpatialGraphBuilder,
 )
-from grail_heart.data.cellchat_database import get_omnipath_lr_database
+from grail_heart.data.cellchat_database import (
+    get_omnipath_lr_database,
+    get_mechanosensitive_gene_sets,
+    build_pathway_gene_mask,
+    CARDIAC_PATHWAYS,
+)
 from grail_heart.models import create_grail_heart
 from grail_heart.training import (
     GRAILHeartLoss,
@@ -243,7 +248,7 @@ def train_fold(
     # Create fresh model for this fold
     model_config = config['model'].copy()
     model_config['n_cell_types'] = metadata['n_cell_types']
-    model_config['n_lr_pairs'] = metadata['n_lr_pairs']
+    model_config['n_lr_pairs'] = None  # per-pair projections too expensive (22K × 65K = 1.46B params)
     n_genes = model_config.pop('n_genes', metadata['n_genes'])
     
     # Handle inverse modelling configuration
@@ -251,6 +256,39 @@ def train_fold(
         # Use n_cell_types as n_fates if not specified
         if model_config.get('n_fates') is None:
             model_config['n_fates'] = metadata['n_cell_types']
+
+    # ── Build biologically-grounded pathway masks (WP1) ──────────────
+    pathway_gene_mask = None
+    mechano_gene_mask = None
+    mechano_pathway_names = None
+
+    if model_config.get('use_inverse_modelling', False):
+        data_config = config.get('data', {})
+        msigdb_path = data_config.get('msigdb_path', None)
+        include_hallmark = data_config.get('include_hallmark', True)
+
+        gene_sets = get_mechanosensitive_gene_sets(
+            msigdb_path=msigdb_path,
+            include_hallmark=include_hallmark,
+        )
+        gene_names = metadata.get('gene_names', [])
+        if gene_sets and gene_names:
+            mask_np = build_pathway_gene_mask(gene_sets, gene_names)
+            pathway_gene_mask = torch.tensor(mask_np, dtype=torch.float32)
+            mechano_keys = [k for k in sorted(gene_sets.keys())
+                           if k in ('YAP_TAZ_Hippo', 'Piezo_Mechano', 'Integrin_FAK')
+                           or k in CARDIAC_PATHWAYS]
+            mechano_sets = {k: gene_sets[k] for k in mechano_keys if k in gene_sets}
+            if mechano_sets:
+                mechano_np = build_pathway_gene_mask(mechano_sets, gene_names)
+                mechano_gene_mask = torch.tensor(mechano_np, dtype=torch.float32)
+                mechano_pathway_names = sorted(mechano_sets.keys())
+                model_config['n_mechano_pathways'] = len(mechano_pathway_names)
+            model_config['n_pathways'] = mask_np.shape[0]
+
+    model_config['pathway_gene_mask'] = pathway_gene_mask
+    model_config['mechano_gene_mask'] = mechano_gene_mask
+    model_config['mechano_pathway_names'] = mechano_pathway_names
     
     model = create_grail_heart(n_genes=n_genes, config=model_config)
     
@@ -286,8 +324,10 @@ def train_fold(
         use_inverse_losses=loss_config.get('use_inverse_losses', True),
         fate_weight=loss_config.get('fate_weight', 0.5),
         causal_weight=loss_config.get('causal_weight', 0.3),
-        differentiation_weight=loss_config.get('differentiation_weight', 0.2),
+        differentiation_weight=loss_config.get('differentiation_weight', 0.5),
         gene_target_weight=loss_config.get('gene_target_weight', 0.3),
+        cycle_weight=loss_config.get('cycle_weight', 0.3),
+        pathway_grounding_weight=loss_config.get('pathway_grounding_weight', 0.1),
     )
     
     # Create trainer

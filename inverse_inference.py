@@ -76,54 +76,98 @@ class InverseModellingAnalysis:
         self.mechano_results = {}
         
     def load_model(self) -> None:
-        """Load trained model with inverse modelling enabled."""
+        """Load trained model with inverse modelling enabled.
+        
+        Infers all architecture dimensions directly from the state_dict
+        so that loading works even when the checkpoint has no saved config.
+        """
         print(f"Loading model from {self.checkpoint_path}")
         
         checkpoint = torch.load(self.checkpoint_path, map_location='cpu', weights_only=False)
         
         config = checkpoint.get('config', {})
         model_config = config.get('model', {})
-        
-        n_cell_types = config.get('n_cell_types', 10)
-        n_genes = config.get('n_genes', 2000)
-        n_lr_pairs = config.get('n_lr_pairs', 5000)
-        
-        # Create model WITH inverse modelling enabled
-        self.model = GRAILHeart(
-            n_genes=n_genes,
-            hidden_dim=model_config.get('hidden_dim', 256),
-            n_gat_layers=model_config.get('n_gat_layers', 3),
-            n_heads=model_config.get('n_heads', 8),
-            n_cell_types=n_cell_types,
-            n_lr_pairs=n_lr_pairs,
-            tasks=['lr', 'reconstruction', 'cell_type'],
-            # Enable inverse modelling
-            use_inverse_modelling=True,
-            n_fates=n_cell_types,  # Use cell types as fate categories
-            n_pathways=20,
-            n_mechano_pathways=8,
-        )
-        
-        # Load state dict (only forward model weights, inverse module is newly initialized)
         state_dict = checkpoint.get('model_state_dict', checkpoint)
         
-        # Filter to only load matching keys (forward model)
-        model_state = self.model.state_dict()
-        pretrained_dict = {
-            k: v for k, v in state_dict.items()
-            if k in model_state and v.shape == model_state[k].shape
-        }
+        # --- Infer architecture from state_dict ---
+        n_genes = state_dict['gene_encoder.encoder.0.weight'].shape[1]
+        hidden_dim = state_dict.get('gat.jk_proj.weight', torch.zeros(256, 1)).shape[0]
         
-        missing_keys = set(model_state.keys()) - set(pretrained_dict.keys())
-        print(f"Loading {len(pretrained_dict)} pretrained parameters")
-        print(f"Newly initialized (inverse module): {len(missing_keys)} parameters")
+        gat_layer_nums = set(
+            int(k.split('.')[2]) for k in state_dict
+            if k.startswith('gat.layers.') and k.split('.')[2].isdigit()
+        )
+        n_gat_layers = len(gat_layer_nums) if gat_layer_nums else 4
         
-        model_state.update(pretrained_dict)
-        self.model.load_state_dict(model_state)
+        att_key = 'gat.layers.0.gat.att_src'
+        if att_key in state_dict:
+            n_edge_types, n_heads, _ = state_dict[att_key].shape
+        else:
+            n_edge_types, n_heads = 2, 4
+        
+        ct_key = 'multimodal_encoder.cell_type_encoder.embedding.weight'
+        n_cell_types = state_dict[ct_key].shape[0] if ct_key in state_dict else 10
+        
+        enc0 = state_dict.get('gene_encoder.encoder.0.weight')
+        enc1 = state_dict.get('gene_encoder.encoder.4.weight')
+        encoder_dims = [enc0.shape[0], enc1.shape[0]] if enc0 is not None and enc1 is not None else [512, 256]
+        
+        # n_lr_pairs: None if no lr_projections in state_dict
+        lr_proj_keys = [k for k in state_dict if 'lr_projections' in k and k.endswith('.weight')]
+        n_lr_pairs = (max(int(k.split('.')[-2]) for k in lr_proj_keys) + 1) if lr_proj_keys else None
+        
+        # Inverse modelling dims
+        has_inverse = any('inverse_module' in k for k in state_dict)
+        n_pathways = 20
+        n_mechano_pathways = 8
+        if has_inverse:
+            pw_key = 'inverse_module.lr_target_decoder.pathway_gene_matrix'
+            if pw_key in state_dict:
+                n_pathways = state_dict[pw_key].shape[0]
+            mech_key = 'inverse_module.mechano_module.pathway_gene_mask'
+            if mech_key in state_dict:
+                n_mechano_pathways = state_dict[mech_key].shape[0]
+        
+        fate_key = 'inverse_module.cell_fate_head.fate_classifier.4.weight'
+        n_fates = state_dict[fate_key].shape[0] if fate_key in state_dict else n_cell_types
+        
+        print(f"  Architecture: {n_genes} genes, {hidden_dim}d, {n_gat_layers} GAT, "
+              f"{n_heads} heads, {n_pathways} pathways, {n_mechano_pathways} mechano")
+        
+        # Create model with inverse modelling enabled
+        self.model = GRAILHeart(
+            n_genes=n_genes,
+            hidden_dim=hidden_dim,
+            n_gat_layers=n_gat_layers,
+            n_heads=n_heads,
+            n_cell_types=n_cell_types,
+            n_edge_types=n_edge_types,
+            encoder_dims=encoder_dims,
+            dropout=model_config.get('dropout', 0.2),
+            n_lr_pairs=n_lr_pairs,
+            tasks=['lr', 'reconstruction', 'cell_type'],
+            use_inverse_modelling=True,
+            n_fates=n_fates,
+            n_pathways=n_pathways,
+            n_mechano_pathways=n_mechano_pathways,
+            pathway_gene_mask=None,
+            mechano_gene_mask=None,
+            mechano_pathway_names=None,
+            decoder_type=model_config.get('decoder_type', 'residual'),
+        )
+        
+        # Load state dict — use strict=False in case of minor mismatches
+        missing, unexpected = self.model.load_state_dict(state_dict, strict=False)
+        if missing:
+            print(f"  Newly initialized params: {len(missing)}")
+        if unexpected:
+            print(f"  Unexpected keys (ignored): {len(unexpected)}")
+        
         self.model.to(self.device)
         self.model.eval()
         
-        print("Model loaded with inverse modelling enabled!")
+        print(f"Model loaded ({sum(p.numel() for p in self.model.parameters()):,} parameters)")
+        print(f"  Inverse modelling: {'ENABLED' if has_inverse else 'DISABLED'}")
         
     def load_lr_database(self) -> None:
         """Load L-R database from OmniPath."""
