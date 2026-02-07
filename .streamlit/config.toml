@@ -1,6 +1,7 @@
 [server]
-maxUploadSize = 1024  # Max upload size in MB (1GB)
-maxMessageSize = 1024  # Max message size in MB
+maxUploadSize = 100000    # Max upload size in MB (effectively unlimited)
+maxMessageSize = 100000   # Max message size in MB (must match or exceed maxUploadSize)
+enableXsrfProtection = true
 
 [browser]
 gatherUsageStats = false

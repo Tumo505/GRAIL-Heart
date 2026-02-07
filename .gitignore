@@ -40,8 +40,8 @@ wheels/
 
 # Model outputs and checkpoints
 # outputs/
-#checkpoints/
-# *.pt  — removed so checkpoints can be tracked
+checkpoints/
+*.pt
 *.pth
 *.ckpt
 

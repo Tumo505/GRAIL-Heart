@@ -6,25 +6,32 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files first (for Docker cache efficiency)
-COPY pyproject.toml README.md MANIFEST.in ./
+COPY pyproject.toml README.md ./
 
-# Install PyTorch CPU (smaller image; use CUDA base image for GPU)
+# Install PyTorch CPU (smaller image for deployment)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir torch-geometric && \
-    pip install --no-cache-dir streamlit plotly
+    pip install --no-cache-dir streamlit plotly scanpy anndata scikit-learn
 
-# Copy source code
+# Copy source code and app
 COPY src/ ./src/
 COPY app/ ./app/
 COPY configs/ ./configs/
-COPY data/lr_database_cache.csv ./data/lr_database_cache.csv
+COPY .streamlit/ ./.streamlit/
 
-# Copy model checkpoint (if you want it baked in; or mount as volume)
-# COPY outputs/final_model/ ./outputs/final_model/
+# Create data dir — the L-R database cache is optional;
+# the app downloads it from OmniPath on first run if missing.
+RUN mkdir -p ./data
+# If you have the cache on the VM, mount it via docker-compose volumes.
+
+# Checkpoint is mounted as a volume (see docker-compose.yml)
+# To bake it in instead, uncomment:
+# COPY outputs/checkpoints/best.pt ./outputs/checkpoints/best.pt
 
 # Install the package
 RUN pip install --no-cache-dir -e .
@@ -34,7 +41,7 @@ ENV PYTHONPATH=/app/src
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_HEADLESS=true
 ENV STREAMLIT_SERVER_ENABLE_CORS=false
-ENV STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
+ENV STREAMLIT_SERVER_MAX_UPLOAD_SIZE=5000
 
 # Expose Streamlit port
 EXPOSE 8501
