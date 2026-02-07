@@ -741,12 +741,12 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### Resources")
-    st.markdown("[Documentation](https://github.com/Tumo505/GRAIL-Heart)")
+    st.markdown("📖 [Documentation](https://github.com/Tumo505/GRAIL-Heart)")
     st.markdown(
-        "[Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)"
+        "🕸️ [Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)"
     )
     st.markdown(
-        "[Preprint](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6137179)"
+        "📄 [Preprint](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6137179)"
     )
 
 # ═══════════════════════════════════════════════════════════════════
@@ -815,10 +815,10 @@ with tab_atlas:
     if cross_df is not None:
         st.markdown("### Cross-Region Comparison")
         fig = make_cross_region_heatmap(cross_df, n=25)
-        st.plotly_chart(fig, width=stretch)
+        st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("📋 Top 30 L-R interactions across all regions", expanded=False):
-            st.dataframe(cross_df.nlargest(30, "mean_score"), width=stretch)
+            st.dataframe(cross_df.nlargest(30, "mean_score"), use_container_width=True)
 
     st.markdown("---")
 
@@ -847,7 +847,7 @@ with tab_atlas:
             fig = make_lr_bar_chart(
                 region_df, "mean_score", f"{sel_region} — Top by Expression", n=15
             )
-            st.plotly_chart(fig, width=stretch)
+            st.plotly_chart(fig, use_container_width=True)
         with col_b:
             if has_causal_col:
                 causal_df = region_df[region_df["causal_score"] > 0].copy()
@@ -856,7 +856,7 @@ with tab_atlas:
                         causal_df, "causal_score",
                         f"{sel_region} — Top by Causal Score", n=15,
                     )
-                    st.plotly_chart(fig, width=stretch)
+                    st.plotly_chart(fig, use_container_width=True)
 
         score_col = (
             "causal_score"
@@ -864,11 +864,11 @@ with tab_atlas:
             else "mean_score"
         )
         fig = make_network_graph(region_df, score_col, n=35)
-        st.plotly_chart(fig, width=stretch)
+        st.plotly_chart(fig, use_container_width=True)
 
         pw_fig = make_pathway_chart(region_df, score_col)
         if pw_fig:
-            st.plotly_chart(pw_fig, width=stretch)
+            st.plotly_chart(pw_fig, use_container_width=True)
 
         csv = region_df.to_csv(index=False)
         st.download_button(
@@ -947,7 +947,7 @@ Upload spatial transcriptomics data in any of these formats:
                     fig = px.pie(
                         values=ct_counts.values, names=ct_counts.index, title="Cell Types"
                     )
-                    st.plotly_chart(fig, width=stretch)
+                    st.plotly_chart(fig, use_container_width=True)
 
             # Preprocessing options
             st.markdown("### Preprocessing")
@@ -1030,10 +1030,10 @@ OmniPath database (22,234 curated L-R pairs). This tells you
                 fig = make_lr_bar_chart(
                     expr_scores, "mean_score", "Top L-R Interactions (Expression)", 20
                 )
-                st.plotly_chart(fig, width=stretch)
+                st.plotly_chart(fig, use_container_width=True)
 
                 fig2 = make_network_graph(expr_scores, "mean_score", 30)
-                st.plotly_chart(fig2, width=stretch)
+                st.plotly_chart(fig2, use_container_width=True)
 
 
 # ── TAB 4: Inverse / Causal ───────────────────────────────────────
@@ -1118,10 +1118,10 @@ This runs the full GRAIL-Heart GNN pipeline:
                             combined, "causal_score",
                             "Top Causal L-R Interactions", 15,
                         )
-                        st.plotly_chart(fig, width=stretch)
+                        st.plotly_chart(fig, use_container_width=True)
                     with c2:
                         fig = make_network_graph(combined, "causal_score", 30)
-                        st.plotly_chart(fig, width=stretch)
+                        st.plotly_chart(fig, use_container_width=True)
 
                     # Pathway activation
                     if "pathway_activation" in model_out:
@@ -1136,7 +1136,7 @@ This runs the full GRAIL-Heart GNN pipeline:
                         fig.update_layout(
                             yaxis=dict(categoryorder="total ascending")
                         )
-                        st.plotly_chart(fig, width=stretch)
+                        st.plotly_chart(fig, use_container_width=True)
 
                 except Exception as e:
                     st.error(f"Inference error: {e}")
@@ -1183,20 +1183,20 @@ with tab_results:
             ]
             if c in df.columns
         ]
-        st.dataframe(df[display_cols].head(200), width=stretch, height=400)
+        st.dataframe(df[display_cols].head(200), use_container_width=True, height=400)
 
         # Charts
         col_a, col_b = st.columns(2)
         with col_a:
             fig = make_lr_bar_chart(df, score_col, f"Top 20 by {score_col}", 20)
-            st.plotly_chart(fig, width=stretch)
+            st.plotly_chart(fig, use_container_width=True)
         with col_b:
             pw_fig = make_pathway_chart(df, score_col)
             if pw_fig:
-                st.plotly_chart(pw_fig, width=stretch)
+                st.plotly_chart(pw_fig, use_container_width=True)
 
         fig = make_network_graph(df, score_col, 40)
-        st.plotly_chart(fig, width=stretch)
+        st.plotly_chart(fig, use_container_width=True)
 
         # Downloads
         st.markdown("### Download")
