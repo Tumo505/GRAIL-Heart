@@ -1,5 +1,5 @@
-# Data directory (large files)
-data/
+# Data directory (large files) — leading slash means top-level only
+/data/
 
 # Virtual environment
 venv/

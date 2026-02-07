@@ -1,0 +1,4526 @@
+{
+  "nodes": [
+    {
+      "id": "CFD",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "C3",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "DCN",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "LRP1",
+      "type": "receptor",
+      "degree": 9
+    },
+    {
+      "id": "MMP2",
+      "type": "dual",
+      "degree": 10
+    },
+    {
+      "id": "TIMP1",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CD55",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "C1QB",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "FBLN1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "FN1",
+      "type": "dual",
+      "degree": 19
+    },
+    {
+      "id": "APOE",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "CXCL12",
+      "type": "dual",
+      "degree": 19
+    },
+    {
+      "id": "TGFB1",
+      "type": "dual",
+      "degree": 37
+    },
+    {
+      "id": "VIM",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CD44",
+      "type": "dual",
+      "degree": 18
+    },
+    {
+      "id": "CD74",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "ACKR3",
+      "type": "dual",
+      "degree": 4
+    },
+    {
+      "id": "CD14",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "THBS1",
+      "type": "dual",
+      "degree": 12
+    },
+    {
+      "id": "HLA-DMA",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "S100A9",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CD68",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "YBX1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IGFBP4",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "LRP6",
+      "type": "receptor",
+      "degree": 8
+    },
+    {
+      "id": "CTSS",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "COL1A2",
+      "type": "dual",
+      "degree": 9
+    },
+    {
+      "id": "NOTCH3",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "JAG1",
+      "type": "dual",
+      "degree": 6
+    },
+    {
+      "id": "ITGA3",
+      "type": "receptor",
+      "degree": 16
+    },
+    {
+      "id": "MET",
+      "type": "dual",
+      "degree": 20
+    },
+    {
+      "id": "HBA2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CD163",
+      "type": "receptor",
+      "degree": 3
+    },
+    {
+      "id": "ICAM1",
+      "type": "dual",
+      "degree": 16
+    },
+    {
+      "id": "DDR2",
+      "type": "dual",
+      "degree": 8
+    },
+    {
+      "id": "S100A4",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "MDM2",
+      "type": "receptor",
+      "degree": 7
+    },
+    {
+      "id": "HBB",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "MMP14",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "COL18A1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CCL2",
+      "type": "ligand",
+      "degree": 7
+    },
+    {
+      "id": "ACKR1",
+      "type": "dual",
+      "degree": 10
+    },
+    {
+      "id": "SERPINF1",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "PLXDC2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CLU",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CXCR4",
+      "type": "dual",
+      "degree": 26
+    },
+    {
+      "id": "S100A8",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "IGFBP3",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "SOS1",
+      "type": "receptor",
+      "degree": 15
+    },
+    {
+      "id": "COL3A1",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "CFB",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "IGF1",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "FLNA",
+      "type": "dual",
+      "degree": 6
+    },
+    {
+      "id": "LAIR1",
+      "type": "receptor",
+      "degree": 5
+    },
+    {
+      "id": "IKBKB",
+      "type": "receptor",
+      "degree": 10
+    },
+    {
+      "id": "EMILIN1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ITGB4",
+      "type": "receptor",
+      "degree": 15
+    },
+    {
+      "id": "SERPINE2",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "AGRN",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "PPIA",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "PAK1",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "PPARG",
+      "type": "receptor",
+      "degree": 5
+    },
+    {
+      "id": "COL1A1",
+      "type": "dual",
+      "degree": 12
+    },
+    {
+      "id": "MBP",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "MMRN2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CD248",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "GNAQ",
+      "type": "receptor",
+      "degree": 5
+    },
+    {
+      "id": "EPHA2",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "APOD",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "LEPR",
+      "type": "receptor",
+      "degree": 3
+    },
+    {
+      "id": "HLA-DRA",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "CHUK",
+      "type": "receptor",
+      "degree": 8
+    },
+    {
+      "id": "MFNG",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "TNFRSF1A",
+      "type": "dual",
+      "degree": 9
+    },
+    {
+      "id": "MAP3K5",
+      "type": "receptor",
+      "degree": 7
+    },
+    {
+      "id": "HP",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "TGFBR3",
+      "type": "dual",
+      "degree": 4
+    },
+    {
+      "id": "POSTN",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ACVRL1",
+      "type": "dual",
+      "degree": 4
+    },
+    {
+      "id": "PLAT",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "S100B",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "PTPN6",
+      "type": "ligand",
+      "degree": 19
+    },
+    {
+      "id": "CD58",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "GPC3",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "RECK",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "SCARB1",
+      "type": "receptor",
+      "degree": 3
+    },
+    {
+      "id": "LFNG",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "SERPINE1",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "ADIPOQ",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "LYN",
+      "type": "dual",
+      "degree": 32
+    },
+    {
+      "id": "FCER1G",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "IL6",
+      "type": "ligand",
+      "degree": 10
+    },
+    {
+      "id": "CTSG",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "VASN",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CD209",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "SPP1",
+      "type": "ligand",
+      "degree": 7
+    },
+    {
+      "id": "PTN",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "PRKCI",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "ANXA1",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "NPPA",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "NPR1",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "FMOD",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "NPR3",
+      "type": "receptor",
+      "degree": 3
+    },
+    {
+      "id": "COL5A1",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "SERPINA5",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "CSF1R",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "CCL5",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "NCOR1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "TNC",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "VEGFC",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "LYVE1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "LIPE",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "VCAM1",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "EGF",
+      "type": "ligand",
+      "degree": 16
+    },
+    {
+      "id": "RTN4",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "CCL21",
+      "type": "ligand",
+      "degree": 6
+    },
+    {
+      "id": "PDGFA",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "TF",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "PTK2B",
+      "type": "receptor",
+      "degree": 9
+    },
+    {
+      "id": "DBP",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "BGN",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "FGFR3",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "RIPK3",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "SAA1",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CX3CR1",
+      "type": "receptor",
+      "degree": 14
+    },
+    {
+      "id": "RARRES2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CMKLR1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "KITLG",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "IL1R1",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "ACVR2A",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "SYK",
+      "type": "dual",
+      "degree": 18
+    },
+    {
+      "id": "PTGIR",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ELN",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ATP2A3",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "ITGA8",
+      "type": "receptor",
+      "degree": 14
+    },
+    {
+      "id": "LINGO1",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "MTDH",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "GZMB",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "MFAP5",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CASP8",
+      "type": "dual",
+      "degree": 15
+    },
+    {
+      "id": "COL14A1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "TLR1",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "ADRA2A",
+      "type": "receptor",
+      "degree": 11
+    },
+    {
+      "id": "NPPB",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "TFF3",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "CCL18",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "CCR5",
+      "type": "dual",
+      "degree": 22
+    },
+    {
+      "id": "WNT5A",
+      "type": "dual",
+      "degree": 8
+    },
+    {
+      "id": "MCAM",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "AGER",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "THBS3",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "LIMK2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "INPP5D",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "MME",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "NGF",
+      "type": "ligand",
+      "degree": 6
+    },
+    {
+      "id": "ITPR1",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CCL19",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "IL10RB",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "NAT10",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "COL4A4",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "LAMB3",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "ITGA10",
+      "type": "receptor",
+      "degree": 13
+    },
+    {
+      "id": "THBD",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "IL4R",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "ITGAL",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "CKLF",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "PLCG2",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "PRG4",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "LTB",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ZAP70",
+      "type": "receptor",
+      "degree": 6
+    },
+    {
+      "id": "FPR3",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "ITGB7",
+      "type": "receptor",
+      "degree": 14
+    },
+    {
+      "id": "PIK3R5",
+      "type": "receptor",
+      "degree": 5
+    },
+    {
+      "id": "LAG3",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "AGTR1",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "MUC1",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "PTPN13",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "MAP2K6",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "IL34",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IL10RA",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "PAWR",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CXCL10",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "CD86",
+      "type": "dual",
+      "degree": 9
+    },
+    {
+      "id": "INHBA",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "NTRK2",
+      "type": "receptor",
+      "degree": 3
+    },
+    {
+      "id": "HAS2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ROR2",
+      "type": "dual",
+      "degree": 4
+    },
+    {
+      "id": "LBP",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "TNFRSF4",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "RELN",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "CD8A",
+      "type": "dual",
+      "degree": 6
+    },
+    {
+      "id": "SPN",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "HAMP",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "SLC40A1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "ACKR2",
+      "type": "receptor",
+      "degree": 7
+    },
+    {
+      "id": "TNFRSF25",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "NOX4",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "SIGLEC9",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "ADGRA2",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CD2",
+      "type": "dual",
+      "degree": 6
+    },
+    {
+      "id": "MMP25",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "MIA",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CDH19",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CXCL14",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "MPZ",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "IL1RN",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CDKN2A",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "PRKAR2B",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "LAMA3",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "CD79A",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "RET",
+      "type": "dual",
+      "degree": 8
+    },
+    {
+      "id": "LPXN",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CD3E",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "NLK",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CCL8",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "CXCL8",
+      "type": "ligand",
+      "degree": 8
+    },
+    {
+      "id": "PTPRF",
+      "type": "dual",
+      "degree": 5
+    },
+    {
+      "id": "LAT",
+      "type": "receptor",
+      "degree": 4
+    },
+    {
+      "id": "MST1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "NTF3",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "CXCL3",
+      "type": "ligand",
+      "degree": 5
+    },
+    {
+      "id": "VWA1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ADAMTS13",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CCL3",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "PTCH1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "SMO",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "EPHB6",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "PRF1",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CNTFR",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CXCL9",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "FRZB",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IL12RB1",
+      "type": "dual",
+      "degree": 7
+    },
+    {
+      "id": "AMOT",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "POMC",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IGSF1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CLEC7A",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "LEP",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "CASP1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "TNFRSF10A",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "TRPM2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "LILRB3",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "TEC",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "DUOX1",
+      "type": "ligand",
+      "degree": 3
+    },
+    {
+      "id": "MYLK",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "BMX",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "VIP",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "DKK2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "KLHL17",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "GRIK2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CSF2RA",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CD5",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "IL16",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "ADGRG6",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "ACR",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "GRIN2C",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "WNT3",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "GZMH",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CD3G",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "EFNB3",
+      "type": "dual",
+      "degree": 3
+    },
+    {
+      "id": "HAPLN1",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "TNFSF9",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "MS4A2",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "CCL26",
+      "type": "ligand",
+      "degree": 4
+    },
+    {
+      "id": "CARD11",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "KLRD1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "MICB",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CLEC4G",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "PSPN",
+      "type": "ligand",
+      "degree": 2
+    },
+    {
+      "id": "GFRA2",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "NPNT",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ANGPTL7",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CLEC12A",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "SELP",
+      "type": "receptor",
+      "degree": 2
+    },
+    {
+      "id": "SFRP5",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "CD24",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "F2RL2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "HRH1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "TNFSF4",
+      "type": "dual",
+      "degree": 2
+    },
+    {
+      "id": "LTB4R",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "NRXN2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IGSF21",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "IL21R",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "CLCF1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "ACVR1C",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "HFE",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "IL1RAPL1",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "SIRPB1",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "NOD2",
+      "type": "receptor",
+      "degree": 1
+    },
+    {
+      "id": "SFRP2",
+      "type": "ligand",
+      "degree": 1
+    },
+    {
+      "id": "PLK1",
+      "type": "receptor",
+      "degree": 1
+    }
+  ],
+  "edges": [
+    {
+      "source": "CFD",
+      "target": "C3",
+      "weight": 1.443
+    },
+    {
+      "source": "DCN",
+      "target": "LRP1",
+      "weight": 1.357
+    },
+    {
+      "source": "MMP2",
+      "target": "DCN",
+      "weight": 1.344
+    },
+    {
+      "source": "TIMP1",
+      "target": "MMP2",
+      "weight": 1.104
+    },
+    {
+      "source": "CD55",
+      "target": "C3",
+      "weight": 0.942
+    },
+    {
+      "source": "C1QB",
+      "target": "LRP1",
+      "weight": 0.904
+    },
+    {
+      "source": "FBLN1",
+      "target": "FN1",
+      "weight": 0.885
+    },
+    {
+      "source": "APOE",
+      "target": "LRP1",
+      "weight": 0.827
+    },
+    {
+      "source": "FN1",
+      "target": "CXCL12",
+      "weight": 0.769
+    },
+    {
+      "source": "CXCL12",
+      "target": "FN1",
+      "weight": 0.769
+    },
+    {
+      "source": "TGFB1",
+      "target": "DCN",
+      "weight": 0.761
+    },
+    {
+      "source": "DCN",
+      "target": "TGFB1",
+      "weight": 0.761
+    },
+    {
+      "source": "VIM",
+      "target": "CD44",
+      "weight": 0.753
+    },
+    {
+      "source": "CD74",
+      "target": "ACKR3",
+      "weight": 0.745
+    },
+    {
+      "source": "CD14",
+      "target": "CXCL12",
+      "weight": 0.74
+    },
+    {
+      "source": "THBS1",
+      "target": "FN1",
+      "weight": 0.725
+    },
+    {
+      "source": "THBS1",
+      "target": "MMP2",
+      "weight": 0.719
+    },
+    {
+      "source": "THBS1",
+      "target": "LRP1",
+      "weight": 0.718
+    },
+    {
+      "source": "HLA-DMA",
+      "target": "CD74",
+      "weight": 0.702
+    },
+    {
+      "source": "S100A9",
+      "target": "CD68",
+      "weight": 0.628
+    },
+    {
+      "source": "TIMP1",
+      "target": "CD44",
+      "weight": 0.618
+    },
+    {
+      "source": "YBX1",
+      "target": "TGFB1",
+      "weight": 0.615
+    },
+    {
+      "source": "IGFBP4",
+      "target": "LRP6",
+      "weight": 0.557
+    },
+    {
+      "source": "CTSS",
+      "target": "CD74",
+      "weight": 0.534
+    },
+    {
+      "source": "COL1A2",
+      "target": "CD44",
+      "weight": 0.529
+    },
+    {
+      "source": "NOTCH3",
+      "target": "JAG1",
+      "weight": 0.526
+    },
+    {
+      "source": "JAG1",
+      "target": "NOTCH3",
+      "weight": 0.526
+    },
+    {
+      "source": "COL1A2",
+      "target": "ITGA3",
+      "weight": 0.515
+    },
+    {
+      "source": "TGFB1",
+      "target": "COL1A2",
+      "weight": 0.487
+    },
+    {
+      "source": "DCN",
+      "target": "MET",
+      "weight": 0.486
+    },
+    {
+      "source": "MET",
+      "target": "DCN",
+      "weight": 0.486
+    },
+    {
+      "source": "HBA2",
+      "target": "CD163",
+      "weight": 0.483
+    },
+    {
+      "source": "FN1",
+      "target": "ITGA3",
+      "weight": 0.474
+    },
+    {
+      "source": "FN1",
+      "target": "ICAM1",
+      "weight": 0.461
+    },
+    {
+      "source": "COL1A2",
+      "target": "DDR2",
+      "weight": 0.46
+    },
+    {
+      "source": "FN1",
+      "target": "CD44",
+      "weight": 0.456
+    },
+    {
+      "source": "S100A4",
+      "target": "MDM2",
+      "weight": 0.453
+    },
+    {
+      "source": "HBB",
+      "target": "CD163",
+      "weight": 0.436
+    },
+    {
+      "source": "MMP14",
+      "target": "MMP2",
+      "weight": 0.435
+    },
+    {
+      "source": "COL18A1",
+      "target": "ITGA3",
+      "weight": 0.434
+    },
+    {
+      "source": "TGFB1",
+      "target": "FN1",
+      "weight": 0.432
+    },
+    {
+      "source": "TGFB1",
+      "target": "MMP2",
+      "weight": 0.428
+    },
+    {
+      "source": "MMP2",
+      "target": "TGFB1",
+      "weight": 0.428
+    },
+    {
+      "source": "CCL2",
+      "target": "ICAM1",
+      "weight": 0.427
+    },
+    {
+      "source": "CCL2",
+      "target": "ACKR1",
+      "weight": 0.426
+    },
+    {
+      "source": "SERPINF1",
+      "target": "PLXDC2",
+      "weight": 0.424
+    },
+    {
+      "source": "CD44",
+      "target": "CXCL12",
+      "weight": 0.409
+    },
+    {
+      "source": "CLU",
+      "target": "TGFB1",
+      "weight": 0.407
+    },
+    {
+      "source": "CCL2",
+      "target": "MMP14",
+      "weight": 0.395
+    },
+    {
+      "source": "CXCR4",
+      "target": "CD74",
+      "weight": 0.394
+    },
+    {
+      "source": "CD74",
+      "target": "CXCR4",
+      "weight": 0.394
+    },
+    {
+      "source": "S100A8",
+      "target": "CD68",
+      "weight": 0.392
+    },
+    {
+      "source": "IGFBP3",
+      "target": "MMP14",
+      "weight": 0.391
+    },
+    {
+      "source": "CXCL12",
+      "target": "ACKR3",
+      "weight": 0.39
+    },
+    {
+      "source": "FN1",
+      "target": "SOS1",
+      "weight": 0.387
+    },
+    {
+      "source": "IGFBP3",
+      "target": "TGFB1",
+      "weight": 0.385
+    },
+    {
+      "source": "COL3A1",
+      "target": "CD44",
+      "weight": 0.384
+    },
+    {
+      "source": "SERPINF1",
+      "target": "LRP6",
+      "weight": 0.378
+    },
+    {
+      "source": "CFD",
+      "target": "CFB",
+      "weight": 0.374
+    },
+    {
+      "source": "COL3A1",
+      "target": "ITGA3",
+      "weight": 0.362
+    },
+    {
+      "source": "THBS1",
+      "target": "ITGA3",
+      "weight": 0.362
+    },
+    {
+      "source": "IGF1",
+      "target": "FLNA",
+      "weight": 0.352
+    },
+    {
+      "source": "TGFB1",
+      "target": "CXCL12",
+      "weight": 0.351
+    },
+    {
+      "source": "COL1A2",
+      "target": "LAIR1",
+      "weight": 0.349
+    },
+    {
+      "source": "FLNA",
+      "target": "IKBKB",
+      "weight": 0.347
+    },
+    {
+      "source": "EMILIN1",
+      "target": "TGFB1",
+      "weight": 0.346
+    },
+    {
+      "source": "COL1A2",
+      "target": "ITGB4",
+      "weight": 0.345
+    },
+    {
+      "source": "SERPINE2",
+      "target": "LRP1",
+      "weight": 0.341
+    },
+    {
+      "source": "THBS1",
+      "target": "TGFB1",
+      "weight": 0.338
+    },
+    {
+      "source": "TGFB1",
+      "target": "THBS1",
+      "weight": 0.338
+    },
+    {
+      "source": "COL3A1",
+      "target": "DDR2",
+      "weight": 0.333
+    },
+    {
+      "source": "AGRN",
+      "target": "LRP1",
+      "weight": 0.333
+    },
+    {
+      "source": "PPIA",
+      "target": "CXCR4",
+      "weight": 0.329
+    },
+    {
+      "source": "CXCR4",
+      "target": "PPIA",
+      "weight": 0.329
+    },
+    {
+      "source": "VIM",
+      "target": "PAK1",
+      "weight": 0.329
+    },
+    {
+      "source": "SERPINF1",
+      "target": "PPARG",
+      "weight": 0.322
+    },
+    {
+      "source": "COL1A1",
+      "target": "CD44",
+      "weight": 0.319
+    },
+    {
+      "source": "MBP",
+      "target": "CXCL12",
+      "weight": 0.315
+    },
+    {
+      "source": "MMRN2",
+      "target": "CD248",
+      "weight": 0.311
+    },
+    {
+      "source": "S100A8",
+      "target": "MDM2",
+      "weight": 0.307
+    },
+    {
+      "source": "CXCL12",
+      "target": "GNAQ",
+      "weight": 0.305
+    },
+    {
+      "source": "COL1A1",
+      "target": "ITGA3",
+      "weight": 0.303
+    },
+    {
+      "source": "FLNA",
+      "target": "EPHA2",
+      "weight": 0.302
+    },
+    {
+      "source": "APOD",
+      "target": "LEPR",
+      "weight": 0.299
+    },
+    {
+      "source": "HLA-DRA",
+      "target": "CTSS",
+      "weight": 0.297
+    },
+    {
+      "source": "CLU",
+      "target": "IKBKB",
+      "weight": 0.289
+    },
+    {
+      "source": "FN1",
+      "target": "ITGB4",
+      "weight": 0.289
+    },
+    {
+      "source": "FLNA",
+      "target": "CHUK",
+      "weight": 0.285
+    },
+    {
+      "source": "MFNG",
+      "target": "NOTCH3",
+      "weight": 0.282
+    },
+    {
+      "source": "TGFB1",
+      "target": "COL1A1",
+      "weight": 0.281
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "IKBKB",
+      "weight": 0.274
+    },
+    {
+      "source": "APOE",
+      "target": "LRP6",
+      "weight": 0.27
+    },
+    {
+      "source": "COL1A1",
+      "target": "DDR2",
+      "weight": 0.264
+    },
+    {
+      "source": "DDR2",
+      "target": "COL1A1",
+      "weight": 0.264
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "MAP3K5",
+      "weight": 0.26
+    },
+    {
+      "source": "HP",
+      "target": "CD163",
+      "weight": 0.26
+    },
+    {
+      "source": "TGFB1",
+      "target": "TGFBR3",
+      "weight": 0.256
+    },
+    {
+      "source": "TGFBR3",
+      "target": "TGFB1",
+      "weight": 0.256
+    },
+    {
+      "source": "POSTN",
+      "target": "FLNA",
+      "weight": 0.255
+    },
+    {
+      "source": "TGFB1",
+      "target": "ACVRL1",
+      "weight": 0.253
+    },
+    {
+      "source": "ACVRL1",
+      "target": "TGFB1",
+      "weight": 0.253
+    },
+    {
+      "source": "COL1A1",
+      "target": "SOS1",
+      "weight": 0.25
+    },
+    {
+      "source": "COL3A1",
+      "target": "ITGB4",
+      "weight": 0.247
+    },
+    {
+      "source": "COL3A1",
+      "target": "LAIR1",
+      "weight": 0.247
+    },
+    {
+      "source": "PLAT",
+      "target": "LRP1",
+      "weight": 0.241
+    },
+    {
+      "source": "S100B",
+      "target": "TNFRSF1A",
+      "weight": 0.239
+    },
+    {
+      "source": "PTPN6",
+      "target": "HLA-DRA",
+      "weight": 0.236
+    },
+    {
+      "source": "PLAT",
+      "target": "FN1",
+      "weight": 0.236
+    },
+    {
+      "source": "CD58",
+      "target": "ICAM1",
+      "weight": 0.229
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "PPARG",
+      "weight": 0.227
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "CHUK",
+      "weight": 0.225
+    },
+    {
+      "source": "GPC3",
+      "target": "LRP1",
+      "weight": 0.225
+    },
+    {
+      "source": "THBS1",
+      "target": "ITGB4",
+      "weight": 0.223
+    },
+    {
+      "source": "MMP2",
+      "target": "RECK",
+      "weight": 0.221
+    },
+    {
+      "source": "RECK",
+      "target": "MMP2",
+      "weight": 0.221
+    },
+    {
+      "source": "CCL2",
+      "target": "CXCR4",
+      "weight": 0.221
+    },
+    {
+      "source": "APOE",
+      "target": "SCARB1",
+      "weight": 0.22
+    },
+    {
+      "source": "LFNG",
+      "target": "NOTCH3",
+      "weight": 0.219
+    },
+    {
+      "source": "COL1A1",
+      "target": "LAIR1",
+      "weight": 0.218
+    },
+    {
+      "source": "SERPINE1",
+      "target": "LRP1",
+      "weight": 0.218
+    },
+    {
+      "source": "ADIPOQ",
+      "target": "CXCL12",
+      "weight": 0.211
+    },
+    {
+      "source": "MMP14",
+      "target": "CD44",
+      "weight": 0.209
+    },
+    {
+      "source": "LYN",
+      "target": "FCER1G",
+      "weight": 0.208
+    },
+    {
+      "source": "IL6",
+      "target": "DCN",
+      "weight": 0.208
+    },
+    {
+      "source": "CXCL12",
+      "target": "CXCR4",
+      "weight": 0.207
+    },
+    {
+      "source": "COL1A1",
+      "target": "ITGB4",
+      "weight": 0.204
+    },
+    {
+      "source": "CTSG",
+      "target": "C3",
+      "weight": 0.198
+    },
+    {
+      "source": "JAG1",
+      "target": "VASN",
+      "weight": 0.196
+    },
+    {
+      "source": "TGFB1",
+      "target": "ICAM1",
+      "weight": 0.196
+    },
+    {
+      "source": "CD209",
+      "target": "ICAM1",
+      "weight": 0.195
+    },
+    {
+      "source": "ICAM1",
+      "target": "CD209",
+      "weight": 0.195
+    },
+    {
+      "source": "SPP1",
+      "target": "CD44",
+      "weight": 0.192
+    },
+    {
+      "source": "TGFB1",
+      "target": "MMP14",
+      "weight": 0.191
+    },
+    {
+      "source": "MMP14",
+      "target": "TGFB1",
+      "weight": 0.191
+    },
+    {
+      "source": "PTN",
+      "target": "TGFB1",
+      "weight": 0.191
+    },
+    {
+      "source": "PRKCI",
+      "target": "ANXA1",
+      "weight": 0.19
+    },
+    {
+      "source": "NPPA",
+      "target": "NPR1",
+      "weight": 0.185
+    },
+    {
+      "source": "SPP1",
+      "target": "ITGA3",
+      "weight": 0.18
+    },
+    {
+      "source": "FMOD",
+      "target": "TGFB1",
+      "weight": 0.18
+    },
+    {
+      "source": "TGFB1",
+      "target": "MDM2",
+      "weight": 0.18
+    },
+    {
+      "source": "THBS1",
+      "target": "SCARB1",
+      "weight": 0.179
+    },
+    {
+      "source": "NPPA",
+      "target": "NPR3",
+      "weight": 0.178
+    },
+    {
+      "source": "COL5A1",
+      "target": "CD44",
+      "weight": 0.177
+    },
+    {
+      "source": "SERPINA5",
+      "target": "FN1",
+      "weight": 0.175
+    },
+    {
+      "source": "CSF1R",
+      "target": "SOS1",
+      "weight": 0.174
+    },
+    {
+      "source": "CCL5",
+      "target": "CXCL12",
+      "weight": 0.173
+    },
+    {
+      "source": "NCOR1",
+      "target": "PPARG",
+      "weight": 0.172
+    },
+    {
+      "source": "COL5A1",
+      "target": "ITGA3",
+      "weight": 0.172
+    },
+    {
+      "source": "TNC",
+      "target": "FN1",
+      "weight": 0.162
+    },
+    {
+      "source": "TGFB1",
+      "target": "MBP",
+      "weight": 0.162
+    },
+    {
+      "source": "VEGFC",
+      "target": "LYVE1",
+      "weight": 0.162
+    },
+    {
+      "source": "MFNG",
+      "target": "JAG1",
+      "weight": 0.159
+    },
+    {
+      "source": "ANXA1",
+      "target": "PAK1",
+      "weight": 0.157
+    },
+    {
+      "source": "COL5A1",
+      "target": "DDR2",
+      "weight": 0.155
+    },
+    {
+      "source": "TGFB1",
+      "target": "VASN",
+      "weight": 0.15
+    },
+    {
+      "source": "CSF1R",
+      "target": "LYN",
+      "weight": 0.147
+    },
+    {
+      "source": "ADIPOQ",
+      "target": "LIPE",
+      "weight": 0.147
+    },
+    {
+      "source": "THBS1",
+      "target": "VCAM1",
+      "weight": 0.146
+    },
+    {
+      "source": "EGF",
+      "target": "RTN4",
+      "weight": 0.144
+    },
+    {
+      "source": "CCL21",
+      "target": "CXCR4",
+      "weight": 0.144
+    },
+    {
+      "source": "PDGFA",
+      "target": "SOS1",
+      "weight": 0.143
+    },
+    {
+      "source": "TF",
+      "target": "C3",
+      "weight": 0.143
+    },
+    {
+      "source": "HLA-DMA",
+      "target": "CTSS",
+      "weight": 0.141
+    },
+    {
+      "source": "FN1",
+      "target": "PTK2B",
+      "weight": 0.139
+    },
+    {
+      "source": "DBP",
+      "target": "ACKR1",
+      "weight": 0.134
+    },
+    {
+      "source": "BGN",
+      "target": "FGFR3",
+      "weight": 0.133
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "RIPK3",
+      "weight": 0.132
+    },
+    {
+      "source": "SAA1",
+      "target": "SCARB1",
+      "weight": 0.129
+    },
+    {
+      "source": "MET",
+      "target": "CD44",
+      "weight": 0.129
+    },
+    {
+      "source": "EGF",
+      "target": "ANXA1",
+      "weight": 0.129
+    },
+    {
+      "source": "LFNG",
+      "target": "JAG1",
+      "weight": 0.128
+    },
+    {
+      "source": "CCL2",
+      "target": "CX3CR1",
+      "weight": 0.127
+    },
+    {
+      "source": "MET",
+      "target": "ITGA3",
+      "weight": 0.127
+    },
+    {
+      "source": "RARRES2",
+      "target": "CMKLR1",
+      "weight": 0.126
+    },
+    {
+      "source": "MET",
+      "target": "ICAM1",
+      "weight": 0.125
+    },
+    {
+      "source": "SPP1",
+      "target": "ITGB4",
+      "weight": 0.124
+    },
+    {
+      "source": "KITLG",
+      "target": "SOS1",
+      "weight": 0.123
+    },
+    {
+      "source": "LYN",
+      "target": "SOS1",
+      "weight": 0.121
+    },
+    {
+      "source": "IL1R1",
+      "target": "CHUK",
+      "weight": 0.12
+    },
+    {
+      "source": "ACVR2A",
+      "target": "TGFBR3",
+      "weight": 0.118
+    },
+    {
+      "source": "SYK",
+      "target": "FCER1G",
+      "weight": 0.117
+    },
+    {
+      "source": "CXCL12",
+      "target": "CX3CR1",
+      "weight": 0.117
+    },
+    {
+      "source": "PTGIR",
+      "target": "GNAQ",
+      "weight": 0.115
+    },
+    {
+      "source": "PRKCI",
+      "target": "MDM2",
+      "weight": 0.115
+    },
+    {
+      "source": "COL5A1",
+      "target": "LAIR1",
+      "weight": 0.115
+    },
+    {
+      "source": "ELN",
+      "target": "ATP2A3",
+      "weight": 0.115
+    },
+    {
+      "source": "COL5A1",
+      "target": "ITGB4",
+      "weight": 0.115
+    },
+    {
+      "source": "COL1A2",
+      "target": "ITGA8",
+      "weight": 0.114
+    },
+    {
+      "source": "RTN4",
+      "target": "LINGO1",
+      "weight": 0.113
+    },
+    {
+      "source": "LINGO1",
+      "target": "RTN4",
+      "weight": 0.113
+    },
+    {
+      "source": "EGF",
+      "target": "MTDH",
+      "weight": 0.113
+    },
+    {
+      "source": "CXCL12",
+      "target": "GZMB",
+      "weight": 0.113
+    },
+    {
+      "source": "MFAP5",
+      "target": "JAG1",
+      "weight": 0.112
+    },
+    {
+      "source": "IL6",
+      "target": "FN1",
+      "weight": 0.112
+    },
+    {
+      "source": "ACKR3",
+      "target": "CXCR4",
+      "weight": 0.112
+    },
+    {
+      "source": "TGFB1",
+      "target": "MET",
+      "weight": 0.111
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "CASP8",
+      "weight": 0.111
+    },
+    {
+      "source": "COL14A1",
+      "target": "CD44",
+      "weight": 0.11
+    },
+    {
+      "source": "BGN",
+      "target": "TLR1",
+      "weight": 0.11
+    },
+    {
+      "source": "CXCL12",
+      "target": "ADRA2A",
+      "weight": 0.11
+    },
+    {
+      "source": "NPPB",
+      "target": "NPR1",
+      "weight": 0.11
+    },
+    {
+      "source": "TGFB1",
+      "target": "PPARG",
+      "weight": 0.109
+    },
+    {
+      "source": "TFF3",
+      "target": "ACKR3",
+      "weight": 0.109
+    },
+    {
+      "source": "IGF1",
+      "target": "SOS1",
+      "weight": 0.108
+    },
+    {
+      "source": "IL6",
+      "target": "NOTCH3",
+      "weight": 0.108
+    },
+    {
+      "source": "DDR2",
+      "target": "PPARG",
+      "weight": 0.108
+    },
+    {
+      "source": "FN1",
+      "target": "ITGA8",
+      "weight": 0.108
+    },
+    {
+      "source": "CCL18",
+      "target": "ACKR1",
+      "weight": 0.107
+    },
+    {
+      "source": "ACVRL1",
+      "target": "ACVR2A",
+      "weight": 0.106
+    },
+    {
+      "source": "ACVR2A",
+      "target": "ACVRL1",
+      "weight": 0.106
+    },
+    {
+      "source": "S100A4",
+      "target": "CCR5",
+      "weight": 0.106
+    },
+    {
+      "source": "WNT5A",
+      "target": "MCAM",
+      "weight": 0.105
+    },
+    {
+      "source": "ANXA1",
+      "target": "ADRA2A",
+      "weight": 0.103
+    },
+    {
+      "source": "S100A9",
+      "target": "AGER",
+      "weight": 0.103
+    },
+    {
+      "source": "THBS3",
+      "target": "ITGA3",
+      "weight": 0.102
+    },
+    {
+      "source": "TGFB1",
+      "target": "LIMK2",
+      "weight": 0.102
+    },
+    {
+      "source": "PDGFA",
+      "target": "MET",
+      "weight": 0.101
+    },
+    {
+      "source": "IL6",
+      "target": "CXCL12",
+      "weight": 0.1
+    },
+    {
+      "source": "CTSG",
+      "target": "CXCL12",
+      "weight": 0.1
+    },
+    {
+      "source": "CSF1R",
+      "target": "INPP5D",
+      "weight": 0.1
+    },
+    {
+      "source": "TGFB1",
+      "target": "CXCR4",
+      "weight": 0.1
+    },
+    {
+      "source": "NPPB",
+      "target": "NPR3",
+      "weight": 0.099
+    },
+    {
+      "source": "NPPA",
+      "target": "MME",
+      "weight": 0.099
+    },
+    {
+      "source": "RECK",
+      "target": "MMP14",
+      "weight": 0.098
+    },
+    {
+      "source": "SAA1",
+      "target": "ADRA2A",
+      "weight": 0.098
+    },
+    {
+      "source": "LYN",
+      "target": "LAIR1",
+      "weight": 0.097
+    },
+    {
+      "source": "NGF",
+      "target": "SOS1",
+      "weight": 0.097
+    },
+    {
+      "source": "LYN",
+      "target": "ITPR1",
+      "weight": 0.097
+    },
+    {
+      "source": "CCL19",
+      "target": "CXCR4",
+      "weight": 0.096
+    },
+    {
+      "source": "IL10RB",
+      "target": "MAP3K5",
+      "weight": 0.096
+    },
+    {
+      "source": "LYN",
+      "target": "IKBKB",
+      "weight": 0.095
+    },
+    {
+      "source": "NAT10",
+      "target": "MDM2",
+      "weight": 0.095
+    },
+    {
+      "source": "CCL21",
+      "target": "ADRA2A",
+      "weight": 0.095
+    },
+    {
+      "source": "COL4A4",
+      "target": "ITGA3",
+      "weight": 0.094
+    },
+    {
+      "source": "COL4A4",
+      "target": "CD44",
+      "weight": 0.092
+    },
+    {
+      "source": "LAMB3",
+      "target": "ITGA3",
+      "weight": 0.092
+    },
+    {
+      "source": "CD14",
+      "target": "TLR1",
+      "weight": 0.091
+    },
+    {
+      "source": "VEGFC",
+      "target": "SOS1",
+      "weight": 0.091
+    },
+    {
+      "source": "PRKCI",
+      "target": "MBP",
+      "weight": 0.091
+    },
+    {
+      "source": "COL1A2",
+      "target": "ITGA10",
+      "weight": 0.09
+    },
+    {
+      "source": "KITLG",
+      "target": "LYN",
+      "weight": 0.09
+    },
+    {
+      "source": "LAMB3",
+      "target": "CD44",
+      "weight": 0.09
+    },
+    {
+      "source": "TFF3",
+      "target": "SOS1",
+      "weight": 0.089
+    },
+    {
+      "source": "SERPINA5",
+      "target": "THBD",
+      "weight": 0.089
+    },
+    {
+      "source": "SERPINE2",
+      "target": "PLAT",
+      "weight": 0.088
+    },
+    {
+      "source": "ICAM1",
+      "target": "VCAM1",
+      "weight": 0.087
+    },
+    {
+      "source": "PTPN6",
+      "target": "IL4R",
+      "weight": 0.086
+    },
+    {
+      "source": "THBS1",
+      "target": "ITGA8",
+      "weight": 0.086
+    },
+    {
+      "source": "S100B",
+      "target": "MAP3K5",
+      "weight": 0.085
+    },
+    {
+      "source": "ICAM1",
+      "target": "ITGAL",
+      "weight": 0.085
+    },
+    {
+      "source": "ITGAL",
+      "target": "ICAM1",
+      "weight": 0.085
+    },
+    {
+      "source": "CKLF",
+      "target": "LRP6",
+      "weight": 0.085
+    },
+    {
+      "source": "ICAM1",
+      "target": "PLCG2",
+      "weight": 0.085
+    },
+    {
+      "source": "PRG4",
+      "target": "CD44",
+      "weight": 0.084
+    },
+    {
+      "source": "PTPN6",
+      "target": "IL10RB",
+      "weight": 0.084
+    },
+    {
+      "source": "PTPN6",
+      "target": "LYN",
+      "weight": 0.084
+    },
+    {
+      "source": "CCL5",
+      "target": "ACKR1",
+      "weight": 0.084
+    },
+    {
+      "source": "LTB",
+      "target": "TNFRSF1A",
+      "weight": 0.083
+    },
+    {
+      "source": "CCL2",
+      "target": "CCR5",
+      "weight": 0.083
+    },
+    {
+      "source": "CXCL12",
+      "target": "ZAP70",
+      "weight": 0.083
+    },
+    {
+      "source": "ANXA1",
+      "target": "FPR3",
+      "weight": 0.082
+    },
+    {
+      "source": "FN1",
+      "target": "ITGA10",
+      "weight": 0.082
+    },
+    {
+      "source": "CSF1R",
+      "target": "PLCG2",
+      "weight": 0.082
+    },
+    {
+      "source": "EGF",
+      "target": "TGFB1",
+      "weight": 0.081
+    },
+    {
+      "source": "CXCR4",
+      "target": "GNAQ",
+      "weight": 0.081
+    },
+    {
+      "source": "MET",
+      "target": "ITGB4",
+      "weight": 0.08
+    },
+    {
+      "source": "NGF",
+      "target": "IKBKB",
+      "weight": 0.08
+    },
+    {
+      "source": "COL1A2",
+      "target": "ITGB7",
+      "weight": 0.08
+    },
+    {
+      "source": "CXCL12",
+      "target": "CCR5",
+      "weight": 0.08
+    },
+    {
+      "source": "NGF",
+      "target": "LRP6",
+      "weight": 0.08
+    },
+    {
+      "source": "COL4A4",
+      "target": "DDR2",
+      "weight": 0.08
+    },
+    {
+      "source": "CXCL12",
+      "target": "PIK3R5",
+      "weight": 0.079
+    },
+    {
+      "source": "LYN",
+      "target": "EPHA2",
+      "weight": 0.079
+    },
+    {
+      "source": "TNC",
+      "target": "ITGA3",
+      "weight": 0.078
+    },
+    {
+      "source": "COL3A1",
+      "target": "ITGA8",
+      "weight": 0.078
+    },
+    {
+      "source": "HLA-DRA",
+      "target": "LAG3",
+      "weight": 0.078
+    },
+    {
+      "source": "LYN",
+      "target": "MET",
+      "weight": 0.077
+    },
+    {
+      "source": "COL1A1",
+      "target": "CASP8",
+      "weight": 0.077
+    },
+    {
+      "source": "EGF",
+      "target": "SOS1",
+      "weight": 0.077
+    },
+    {
+      "source": "IGF1",
+      "target": "MET",
+      "weight": 0.076
+    },
+    {
+      "source": "TGFB1",
+      "target": "AGTR1",
+      "weight": 0.076
+    },
+    {
+      "source": "ICAM1",
+      "target": "MUC1",
+      "weight": 0.076
+    },
+    {
+      "source": "PTPN13",
+      "target": "MBP",
+      "weight": 0.075
+    },
+    {
+      "source": "SPP1",
+      "target": "SYK",
+      "weight": 0.073
+    },
+    {
+      "source": "KITLG",
+      "target": "CXCR4",
+      "weight": 0.071
+    },
+    {
+      "source": "CCL21",
+      "target": "CX3CR1",
+      "weight": 0.071
+    },
+    {
+      "source": "LYN",
+      "target": "INPP5D",
+      "weight": 0.07
+    },
+    {
+      "source": "SYK",
+      "target": "SOS1",
+      "weight": 0.069
+    },
+    {
+      "source": "TNFRSF1A",
+      "target": "MAP2K6",
+      "weight": 0.069
+    },
+    {
+      "source": "SYK",
+      "target": "MDM2",
+      "weight": 0.069
+    },
+    {
+      "source": "IL34",
+      "target": "CSF1R",
+      "weight": 0.068
+    },
+    {
+      "source": "PRKCI",
+      "target": "IKBKB",
+      "weight": 0.067
+    },
+    {
+      "source": "THBS3",
+      "target": "ITGB4",
+      "weight": 0.067
+    },
+    {
+      "source": "COL3A1",
+      "target": "ITGA10",
+      "weight": 0.066
+    },
+    {
+      "source": "IL10RB",
+      "target": "IL10RA",
+      "weight": 0.066
+    },
+    {
+      "source": "VEGFC",
+      "target": "MET",
+      "weight": 0.066
+    },
+    {
+      "source": "TGFB1",
+      "target": "TNC",
+      "weight": 0.066
+    },
+    {
+      "source": "PRKCI",
+      "target": "PAWR",
+      "weight": 0.066
+    },
+    {
+      "source": "PRKCI",
+      "target": "CHUK",
+      "weight": 0.066
+    },
+    {
+      "source": "FN1",
+      "target": "ITGB7",
+      "weight": 0.065
+    },
+    {
+      "source": "CCL21",
+      "target": "CXCL10",
+      "weight": 0.065
+    },
+    {
+      "source": "TFF3",
+      "target": "CXCR4",
+      "weight": 0.065
+    },
+    {
+      "source": "CD86",
+      "target": "HLA-DRA",
+      "weight": 0.065
+    },
+    {
+      "source": "HLA-DRA",
+      "target": "CD86",
+      "weight": 0.065
+    },
+    {
+      "source": "INHBA",
+      "target": "TGFBR3",
+      "weight": 0.065
+    },
+    {
+      "source": "S100A8",
+      "target": "AGER",
+      "weight": 0.065
+    },
+    {
+      "source": "LAMB3",
+      "target": "ITGB4",
+      "weight": 0.064
+    },
+    {
+      "source": "COL1A1",
+      "target": "ITGA8",
+      "weight": 0.063
+    },
+    {
+      "source": "LYN",
+      "target": "NTRK2",
+      "weight": 0.062
+    },
+    {
+      "source": "THBS1",
+      "target": "ITGA10",
+      "weight": 0.062
+    },
+    {
+      "source": "HAS2",
+      "target": "CD44",
+      "weight": 0.062
+    },
+    {
+      "source": "ROR2",
+      "target": "FLNA",
+      "weight": 0.062
+    },
+    {
+      "source": "PTPN13",
+      "target": "LYN",
+      "weight": 0.061
+    },
+    {
+      "source": "SYK",
+      "target": "LYN",
+      "weight": 0.06
+    },
+    {
+      "source": "LYN",
+      "target": "SYK",
+      "weight": 0.06
+    },
+    {
+      "source": "SERPINE1",
+      "target": "PLAT",
+      "weight": 0.059
+    },
+    {
+      "source": "LBP",
+      "target": "CD14",
+      "weight": 0.058
+    },
+    {
+      "source": "CCL19",
+      "target": "ADRA2A",
+      "weight": 0.058
+    },
+    {
+      "source": "CCL5",
+      "target": "TNFRSF4",
+      "weight": 0.058
+    },
+    {
+      "source": "CTSG",
+      "target": "THBD",
+      "weight": 0.058
+    },
+    {
+      "source": "THBS1",
+      "target": "ITGB7",
+      "weight": 0.057
+    },
+    {
+      "source": "IL10RA",
+      "target": "MAP3K5",
+      "weight": 0.057
+    },
+    {
+      "source": "NGF",
+      "target": "ITPR1",
+      "weight": 0.057
+    },
+    {
+      "source": "MET",
+      "target": "INPP5D",
+      "weight": 0.057
+    },
+    {
+      "source": "RELN",
+      "target": "ITGA3",
+      "weight": 0.057
+    },
+    {
+      "source": "CXCL10",
+      "target": "ACKR1",
+      "weight": 0.057
+    },
+    {
+      "source": "CD8A",
+      "target": "TGFB1",
+      "weight": 0.056
+    },
+    {
+      "source": "ICAM1",
+      "target": "SPN",
+      "weight": 0.055
+    },
+    {
+      "source": "SPN",
+      "target": "ICAM1",
+      "weight": 0.055
+    },
+    {
+      "source": "LYN",
+      "target": "PLCG2",
+      "weight": 0.055
+    },
+    {
+      "source": "COL4A4",
+      "target": "ITGB4",
+      "weight": 0.055
+    },
+    {
+      "source": "COL3A1",
+      "target": "ITGB7",
+      "weight": 0.054
+    },
+    {
+      "source": "NGF",
+      "target": "CHUK",
+      "weight": 0.054
+    },
+    {
+      "source": "CCL21",
+      "target": "CCR5",
+      "weight": 0.054
+    },
+    {
+      "source": "PTPN6",
+      "target": "SYK",
+      "weight": 0.052
+    },
+    {
+      "source": "INHBA",
+      "target": "TGFB1",
+      "weight": 0.052
+    },
+    {
+      "source": "PTPN13",
+      "target": "MET",
+      "weight": 0.051
+    },
+    {
+      "source": "HAMP",
+      "target": "SLC40A1",
+      "weight": 0.051
+    },
+    {
+      "source": "AGTR1",
+      "target": "GNAQ",
+      "weight": 0.051
+    },
+    {
+      "source": "CCL2",
+      "target": "ACKR2",
+      "weight": 0.051
+    },
+    {
+      "source": "CCL5",
+      "target": "CXCR4",
+      "weight": 0.051
+    },
+    {
+      "source": "PTPN6",
+      "target": "IL10RA",
+      "weight": 0.05
+    },
+    {
+      "source": "TNC",
+      "target": "ITGB4",
+      "weight": 0.05
+    },
+    {
+      "source": "TNFRSF25",
+      "target": "CASP8",
+      "weight": 0.05
+    },
+    {
+      "source": "LYN",
+      "target": "PTK2B",
+      "weight": 0.049
+    },
+    {
+      "source": "COL1A1",
+      "target": "ITGA10",
+      "weight": 0.049
+    },
+    {
+      "source": "NGF",
+      "target": "NTRK2",
+      "weight": 0.049
+    },
+    {
+      "source": "RELN",
+      "target": "ITGB4",
+      "weight": 0.049
+    },
+    {
+      "source": "EGF",
+      "target": "IKBKB",
+      "weight": 0.049
+    },
+    {
+      "source": "IL6",
+      "target": "SOS1",
+      "weight": 0.049
+    },
+    {
+      "source": "EGF",
+      "target": "MET",
+      "weight": 0.049
+    },
+    {
+      "source": "EGF",
+      "target": "ITGB4",
+      "weight": 0.049
+    },
+    {
+      "source": "CCL18",
+      "target": "CXCR4",
+      "weight": 0.048
+    },
+    {
+      "source": "LYN",
+      "target": "MUC1",
+      "weight": 0.048
+    },
+    {
+      "source": "SERPINA5",
+      "target": "PLAT",
+      "weight": 0.047
+    },
+    {
+      "source": "TGFB1",
+      "target": "NOX4",
+      "weight": 0.047
+    },
+    {
+      "source": "CCL21",
+      "target": "ACKR2",
+      "weight": 0.047
+    },
+    {
+      "source": "SIGLEC9",
+      "target": "ADGRA2",
+      "weight": 0.046
+    },
+    {
+      "source": "CD58",
+      "target": "CD2",
+      "weight": 0.046
+    },
+    {
+      "source": "MMP25",
+      "target": "MMP2",
+      "weight": 0.046
+    },
+    {
+      "source": "MIA",
+      "target": "CDH19",
+      "weight": 0.046
+    },
+    {
+      "source": "CXCL14",
+      "target": "CXCR4",
+      "weight": 0.045
+    },
+    {
+      "source": "COL1A1",
+      "target": "ITGB7",
+      "weight": 0.045
+    },
+    {
+      "source": "CD44",
+      "target": "CD2",
+      "weight": 0.045
+    },
+    {
+      "source": "MPZ",
+      "target": "MAP3K5",
+      "weight": 0.045
+    },
+    {
+      "source": "LYN",
+      "target": "MME",
+      "weight": 0.044
+    },
+    {
+      "source": "IL1RN",
+      "target": "IL1R1",
+      "weight": 0.044
+    },
+    {
+      "source": "ACKR1",
+      "target": "CCR5",
+      "weight": 0.043
+    },
+    {
+      "source": "CASP8",
+      "target": "IKBKB",
+      "weight": 0.042
+    },
+    {
+      "source": "WNT5A",
+      "target": "LRP6",
+      "weight": 0.042
+    },
+    {
+      "source": "COL5A1",
+      "target": "ITGA8",
+      "weight": 0.042
+    },
+    {
+      "source": "CDKN2A",
+      "target": "MMP2",
+      "weight": 0.041
+    },
+    {
+      "source": "SPP1",
+      "target": "ITGA8",
+      "weight": 0.041
+    },
+    {
+      "source": "TGFB1",
+      "target": "CCR5",
+      "weight": 0.041
+    },
+    {
+      "source": "EGF",
+      "target": "EPHA2",
+      "weight": 0.041
+    },
+    {
+      "source": "CD2",
+      "target": "PRKAR2B",
+      "weight": 0.04
+    },
+    {
+      "source": "LAMA3",
+      "target": "ITGA3",
+      "weight": 0.04
+    },
+    {
+      "source": "FN1",
+      "target": "CD79A",
+      "weight": 0.039
+    },
+    {
+      "source": "DDR2",
+      "target": "RET",
+      "weight": 0.039
+    },
+    {
+      "source": "LYN",
+      "target": "LPXN",
+      "weight": 0.039
+    },
+    {
+      "source": "PTPN6",
+      "target": "LEPR",
+      "weight": 0.039
+    },
+    {
+      "source": "MET",
+      "target": "PTK2B",
+      "weight": 0.039
+    },
+    {
+      "source": "PTPN6",
+      "target": "CD3E",
+      "weight": 0.039
+    },
+    {
+      "source": "WNT5A",
+      "target": "NLK",
+      "weight": 0.038
+    },
+    {
+      "source": "LAMA3",
+      "target": "CD44",
+      "weight": 0.038
+    },
+    {
+      "source": "CCL19",
+      "target": "CX3CR1",
+      "weight": 0.038
+    },
+    {
+      "source": "S100B",
+      "target": "CASP8",
+      "weight": 0.038
+    },
+    {
+      "source": "LYN",
+      "target": "PIK3R5",
+      "weight": 0.038
+    },
+    {
+      "source": "CCL8",
+      "target": "ACKR1",
+      "weight": 0.037
+    },
+    {
+      "source": "CXCL8",
+      "target": "ICAM1",
+      "weight": 0.037
+    },
+    {
+      "source": "PTPN6",
+      "target": "PTK2B",
+      "weight": 0.037
+    },
+    {
+      "source": "LYN",
+      "target": "CASP8",
+      "weight": 0.035
+    },
+    {
+      "source": "PTPRF",
+      "target": "MET",
+      "weight": 0.035
+    },
+    {
+      "source": "LYN",
+      "target": "LAT",
+      "weight": 0.035
+    },
+    {
+      "source": "MST1",
+      "target": "ICAM1",
+      "weight": 0.035
+    },
+    {
+      "source": "NTF3",
+      "target": "MBP",
+      "weight": 0.035
+    },
+    {
+      "source": "CASP8",
+      "target": "MAP3K5",
+      "weight": 0.035
+    },
+    {
+      "source": "CCL19",
+      "target": "ACKR2",
+      "weight": 0.034
+    },
+    {
+      "source": "EGF",
+      "target": "PAK1",
+      "weight": 0.034
+    },
+    {
+      "source": "CXCL3",
+      "target": "ACKR1",
+      "weight": 0.034
+    },
+    {
+      "source": "VWA1",
+      "target": "ADAMTS13",
+      "weight": 0.034
+    },
+    {
+      "source": "MET",
+      "target": "MUC1",
+      "weight": 0.034
+    },
+    {
+      "source": "CCR5",
+      "target": "GNAQ",
+      "weight": 0.034
+    },
+    {
+      "source": "CCL3",
+      "target": "CXCR4",
+      "weight": 0.033
+    },
+    {
+      "source": "MUC1",
+      "target": "SYK",
+      "weight": 0.033
+    },
+    {
+      "source": "CASP8",
+      "target": "CHUK",
+      "weight": 0.033
+    },
+    {
+      "source": "IL6",
+      "target": "LYN",
+      "weight": 0.032
+    },
+    {
+      "source": "LYN",
+      "target": "RET",
+      "weight": 0.032
+    },
+    {
+      "source": "COL5A1",
+      "target": "ITGA10",
+      "weight": 0.032
+    },
+    {
+      "source": "PTCH1",
+      "target": "SMO",
+      "weight": 0.032
+    },
+    {
+      "source": "CXCL10",
+      "target": "CXCR4",
+      "weight": 0.031
+    },
+    {
+      "source": "LYN",
+      "target": "ZAP70",
+      "weight": 0.031
+    },
+    {
+      "source": "CXCL8",
+      "target": "ACKR1",
+      "weight": 0.031
+    },
+    {
+      "source": "SYK",
+      "target": "CD3E",
+      "weight": 0.031
+    },
+    {
+      "source": "EPHB6",
+      "target": "EPHA2",
+      "weight": 0.031
+    },
+    {
+      "source": "CCL19",
+      "target": "CCR5",
+      "weight": 0.031
+    },
+    {
+      "source": "NTF3",
+      "target": "SOS1",
+      "weight": 0.031
+    },
+    {
+      "source": "EPHA2",
+      "target": "FGFR3",
+      "weight": 0.031
+    },
+    {
+      "source": "CCL5",
+      "target": "ADRA2A",
+      "weight": 0.031
+    },
+    {
+      "source": "EGF",
+      "target": "LAMB3",
+      "weight": 0.03
+    },
+    {
+      "source": "CD8A",
+      "target": "PRF1",
+      "weight": 0.03
+    },
+    {
+      "source": "SPP1",
+      "target": "ITGB7",
+      "weight": 0.03
+    },
+    {
+      "source": "PTPN6",
+      "target": "CNTFR",
+      "weight": 0.03
+    },
+    {
+      "source": "CCL18",
+      "target": "CX3CR1",
+      "weight": 0.03
+    },
+    {
+      "source": "CXCL9",
+      "target": "ACKR1",
+      "weight": 0.029
+    },
+    {
+      "source": "SPP1",
+      "target": "ITGA10",
+      "weight": 0.029
+    },
+    {
+      "source": "FRZB",
+      "target": "WNT5A",
+      "weight": 0.028
+    },
+    {
+      "source": "CCL8",
+      "target": "CXCR4",
+      "weight": 0.028
+    },
+    {
+      "source": "SYK",
+      "target": "PTK2B",
+      "weight": 0.028
+    },
+    {
+      "source": "SYK",
+      "target": "PLCG2",
+      "weight": 0.028
+    },
+    {
+      "source": "IL12RB1",
+      "target": "IL1R1",
+      "weight": 0.028
+    },
+    {
+      "source": "PRKCI",
+      "target": "AMOT",
+      "weight": 0.028
+    },
+    {
+      "source": "IL6",
+      "target": "MET",
+      "weight": 0.028
+    },
+    {
+      "source": "POMC",
+      "target": "ADRA2A",
+      "weight": 0.028
+    },
+    {
+      "source": "COL5A1",
+      "target": "ITGB7",
+      "weight": 0.028
+    },
+    {
+      "source": "PTPN6",
+      "target": "LAT",
+      "weight": 0.027
+    },
+    {
+      "source": "PTPN6",
+      "target": "CASP8",
+      "weight": 0.027
+    },
+    {
+      "source": "ACVR2A",
+      "target": "IGSF1",
+      "weight": 0.026
+    },
+    {
+      "source": "CCL5",
+      "target": "CX3CR1",
+      "weight": 0.025
+    },
+    {
+      "source": "IL12RB1",
+      "target": "ITGA3",
+      "weight": 0.025
+    },
+    {
+      "source": "CLEC7A",
+      "target": "SYK",
+      "weight": 0.025
+    },
+    {
+      "source": "LEP",
+      "target": "CASP1",
+      "weight": 0.025
+    },
+    {
+      "source": "TNFRSF10A",
+      "target": "IKBKB",
+      "weight": 0.025
+    },
+    {
+      "source": "ITGAL",
+      "target": "PTK2B",
+      "weight": 0.025
+    },
+    {
+      "source": "PTPN13",
+      "target": "TRPM2",
+      "weight": 0.024
+    },
+    {
+      "source": "THBS3",
+      "target": "ITGA8",
+      "weight": 0.024
+    },
+    {
+      "source": "LAMA3",
+      "target": "ITGB4",
+      "weight": 0.024
+    },
+    {
+      "source": "EGF",
+      "target": "CASP8",
+      "weight": 0.023
+    },
+    {
+      "source": "MPZ",
+      "target": "LILRB3",
+      "weight": 0.023
+    },
+    {
+      "source": "MUC1",
+      "target": "CASP8",
+      "weight": 0.023
+    },
+    {
+      "source": "CXCL14",
+      "target": "CX3CR1",
+      "weight": 0.023
+    },
+    {
+      "source": "MUC1",
+      "target": "SIGLEC9",
+      "weight": 0.023
+    },
+    {
+      "source": "SIGLEC9",
+      "target": "MUC1",
+      "weight": 0.023
+    },
+    {
+      "source": "LYN",
+      "target": "TEC",
+      "weight": 0.023
+    },
+    {
+      "source": "DUOX1",
+      "target": "MYLK",
+      "weight": 0.022
+    },
+    {
+      "source": "CCR5",
+      "target": "CXCR4",
+      "weight": 0.022
+    },
+    {
+      "source": "CXCR4",
+      "target": "CCR5",
+      "weight": 0.022
+    },
+    {
+      "source": "CASP8",
+      "target": "RIPK3",
+      "weight": 0.022
+    },
+    {
+      "source": "VCAM1",
+      "target": "PTK2B",
+      "weight": 0.022
+    },
+    {
+      "source": "INHBA",
+      "target": "ACVR2A",
+      "weight": 0.022
+    },
+    {
+      "source": "CCL5",
+      "target": "CCR5",
+      "weight": 0.022
+    },
+    {
+      "source": "S100B",
+      "target": "AGER",
+      "weight": 0.022
+    },
+    {
+      "source": "PRKCI",
+      "target": "BMX",
+      "weight": 0.022
+    },
+    {
+      "source": "PTPN6",
+      "target": "ZAP70",
+      "weight": 0.021
+    },
+    {
+      "source": "CXCR4",
+      "target": "PIK3R5",
+      "weight": 0.021
+    },
+    {
+      "source": "KITLG",
+      "target": "TEC",
+      "weight": 0.021
+    },
+    {
+      "source": "TNFRSF10A",
+      "target": "CHUK",
+      "weight": 0.021
+    },
+    {
+      "source": "VIP",
+      "target": "NPR3",
+      "weight": 0.02
+    },
+    {
+      "source": "CD2",
+      "target": "SYK",
+      "weight": 0.02
+    },
+    {
+      "source": "CXCL14",
+      "target": "CCR5",
+      "weight": 0.02
+    },
+    {
+      "source": "MET",
+      "target": "RET",
+      "weight": 0.019
+    },
+    {
+      "source": "CDKN2A",
+      "target": "MDM2",
+      "weight": 0.019
+    },
+    {
+      "source": "PTPN13",
+      "target": "CASP8",
+      "weight": 0.019
+    },
+    {
+      "source": "DUOX1",
+      "target": "LIPE",
+      "weight": 0.019
+    },
+    {
+      "source": "SYK",
+      "target": "ZAP70",
+      "weight": 0.019
+    },
+    {
+      "source": "DKK2",
+      "target": "LRP6",
+      "weight": 0.019
+    },
+    {
+      "source": "SYK",
+      "target": "LAT",
+      "weight": 0.018
+    },
+    {
+      "source": "EGF",
+      "target": "PTK2B",
+      "weight": 0.018
+    },
+    {
+      "source": "LAMB3",
+      "target": "ITGA8",
+      "weight": 0.018
+    },
+    {
+      "source": "SYK",
+      "target": "PIK3R5",
+      "weight": 0.018
+    },
+    {
+      "source": "COL4A4",
+      "target": "ITGA8",
+      "weight": 0.018
+    },
+    {
+      "source": "CCL18",
+      "target": "CCR5",
+      "weight": 0.018
+    },
+    {
+      "source": "EGF",
+      "target": "BMX",
+      "weight": 0.018
+    },
+    {
+      "source": "CXCL3",
+      "target": "CXCR4",
+      "weight": 0.018
+    },
+    {
+      "source": "CD8A",
+      "target": "LAT",
+      "weight": 0.018
+    },
+    {
+      "source": "THBS3",
+      "target": "ITGB7",
+      "weight": 0.018
+    },
+    {
+      "source": "KLHL17",
+      "target": "GRIK2",
+      "weight": 0.018
+    },
+    {
+      "source": "CCL3",
+      "target": "CX3CR1",
+      "weight": 0.017
+    },
+    {
+      "source": "TNC",
+      "target": "ITGA8",
+      "weight": 0.017
+    },
+    {
+      "source": "COL4A4",
+      "target": "ITGA10",
+      "weight": 0.017
+    },
+    {
+      "source": "MET",
+      "target": "PIK3R5",
+      "weight": 0.016
+    },
+    {
+      "source": "CXCL8",
+      "target": "CXCR4",
+      "weight": 0.016
+    },
+    {
+      "source": "LYN",
+      "target": "CSF2RA",
+      "weight": 0.016
+    },
+    {
+      "source": "CD5",
+      "target": "TNFRSF25",
+      "weight": 0.016
+    },
+    {
+      "source": "IL16",
+      "target": "CCR5",
+      "weight": 0.016
+    },
+    {
+      "source": "COL4A4",
+      "target": "ADGRG6",
+      "weight": 0.016
+    },
+    {
+      "source": "SERPINA5",
+      "target": "ACR",
+      "weight": 0.016
+    },
+    {
+      "source": "GZMB",
+      "target": "CASP8",
+      "weight": 0.016
+    },
+    {
+      "source": "CXCL10",
+      "target": "ADRA2A",
+      "weight": 0.015
+    },
+    {
+      "source": "IL16",
+      "target": "GRIN2C",
+      "weight": 0.015
+    },
+    {
+      "source": "EGF",
+      "target": "TF",
+      "weight": 0.015
+    },
+    {
+      "source": "FGFR3",
+      "target": "PTK2B",
+      "weight": 0.015
+    },
+    {
+      "source": "CD79A",
+      "target": "SOS1",
+      "weight": 0.015
+    },
+    {
+      "source": "WNT3",
+      "target": "LRP6",
+      "weight": 0.015
+    },
+    {
+      "source": "IL6",
+      "target": "GZMB",
+      "weight": 0.015
+    },
+    {
+      "source": "CXCL10",
+      "target": "CX3CR1",
+      "weight": 0.015
+    },
+    {
+      "source": "THBS3",
+      "target": "ITGA10",
+      "weight": 0.014
+    },
+    {
+      "source": "VCAM1",
+      "target": "ITGB7",
+      "weight": 0.014
+    },
+    {
+      "source": "GZMH",
+      "target": "GZMB",
+      "weight": 0.014
+    },
+    {
+      "source": "PTPN6",
+      "target": "CD3G",
+      "weight": 0.014
+    },
+    {
+      "source": "NTF3",
+      "target": "NTRK2",
+      "weight": 0.014
+    },
+    {
+      "source": "RELN",
+      "target": "ITGA8",
+      "weight": 0.014
+    },
+    {
+      "source": "EFNB3",
+      "target": "PAK1",
+      "weight": 0.014
+    },
+    {
+      "source": "SYK",
+      "target": "CD79A",
+      "weight": 0.014
+    },
+    {
+      "source": "CD2",
+      "target": "SPN",
+      "weight": 0.014
+    },
+    {
+      "source": "COL4A4",
+      "target": "ITGB7",
+      "weight": 0.014
+    },
+    {
+      "source": "IL12RB1",
+      "target": "CD3E",
+      "weight": 0.014
+    },
+    {
+      "source": "LYN",
+      "target": "CD5",
+      "weight": 0.014
+    },
+    {
+      "source": "PTPN6",
+      "target": "IL12RB1",
+      "weight": 0.014
+    },
+    {
+      "source": "LEP",
+      "target": "LEPR",
+      "weight": 0.013
+    },
+    {
+      "source": "CD86",
+      "target": "PRF1",
+      "weight": 0.013
+    },
+    {
+      "source": "HAPLN1",
+      "target": "ADGRA2",
+      "weight": 0.013
+    },
+    {
+      "source": "CD2",
+      "target": "CD8A",
+      "weight": 0.013
+    },
+    {
+      "source": "TNFSF9",
+      "target": "MAP3K5",
+      "weight": 0.013
+    },
+    {
+      "source": "PTPN6",
+      "target": "CSF2RA",
+      "weight": 0.013
+    },
+    {
+      "source": "LAMB3",
+      "target": "ITGA10",
+      "weight": 0.013
+    },
+    {
+      "source": "LYN",
+      "target": "MS4A2",
+      "weight": 0.012
+    },
+    {
+      "source": "TNC",
+      "target": "ITGB7",
+      "weight": 0.012
+    },
+    {
+      "source": "LYN",
+      "target": "CD79A",
+      "weight": 0.012
+    },
+    {
+      "source": "PTPRF",
+      "target": "RET",
+      "weight": 0.012
+    },
+    {
+      "source": "RET",
+      "target": "PTPRF",
+      "weight": 0.012
+    },
+    {
+      "source": "CCL8",
+      "target": "CX3CR1",
+      "weight": 0.012
+    },
+    {
+      "source": "TNC",
+      "target": "ITGA10",
+      "weight": 0.012
+    },
+    {
+      "source": "CCL26",
+      "target": "CXCR4",
+      "weight": 0.012
+    },
+    {
+      "source": "CARD11",
+      "target": "IKBKB",
+      "weight": 0.012
+    },
+    {
+      "source": "LAMB3",
+      "target": "ITGB7",
+      "weight": 0.012
+    },
+    {
+      "source": "LBP",
+      "target": "VCAM1",
+      "weight": 0.012
+    },
+    {
+      "source": "KLRD1",
+      "target": "MICB",
+      "weight": 0.012
+    },
+    {
+      "source": "CLEC4G",
+      "target": "LAG3",
+      "weight": 0.011
+    },
+    {
+      "source": "PSPN",
+      "target": "GFRA2",
+      "weight": 0.011
+    },
+    {
+      "source": "CD86",
+      "target": "CD8A",
+      "weight": 0.011
+    },
+    {
+      "source": "CD8A",
+      "target": "CD86",
+      "weight": 0.011
+    },
+    {
+      "source": "NPNT",
+      "target": "ITGA8",
+      "weight": 0.011
+    },
+    {
+      "source": "EGF",
+      "target": "LAMA3",
+      "weight": 0.011
+    },
+    {
+      "source": "ANGPTL7",
+      "target": "LILRB3",
+      "weight": 0.011
+    },
+    {
+      "source": "CXCL9",
+      "target": "CXCR4",
+      "weight": 0.01
+    },
+    {
+      "source": "PTPN6",
+      "target": "CLEC12A",
+      "weight": 0.01
+    },
+    {
+      "source": "CXCL8",
+      "target": "SELP",
+      "weight": 0.01
+    },
+    {
+      "source": "IL6",
+      "target": "MAP2K6",
+      "weight": 0.01
+    },
+    {
+      "source": "NTF3",
+      "target": "RET",
+      "weight": 0.01
+    },
+    {
+      "source": "SFRP5",
+      "target": "WNT5A",
+      "weight": 0.01
+    },
+    {
+      "source": "LYN",
+      "target": "CD24",
+      "weight": 0.01
+    },
+    {
+      "source": "CTSG",
+      "target": "F2RL2",
+      "weight": 0.01
+    },
+    {
+      "source": "IL6",
+      "target": "HRH1",
+      "weight": 0.01
+    },
+    {
+      "source": "CCL3",
+      "target": "CCR5",
+      "weight": 0.01
+    },
+    {
+      "source": "TNFRSF4",
+      "target": "TNFSF4",
+      "weight": 0.01
+    },
+    {
+      "source": "TNFSF4",
+      "target": "TNFRSF4",
+      "weight": 0.01
+    },
+    {
+      "source": "PTPN6",
+      "target": "CD79A",
+      "weight": 0.01
+    },
+    {
+      "source": "CARD11",
+      "target": "CHUK",
+      "weight": 0.01
+    },
+    {
+      "source": "RET",
+      "target": "GFRA2",
+      "weight": 0.01
+    },
+    {
+      "source": "CXCL8",
+      "target": "CX3CR1",
+      "weight": 0.01
+    },
+    {
+      "source": "CXCL3",
+      "target": "CX3CR1",
+      "weight": 0.009
+    },
+    {
+      "source": "PSPN",
+      "target": "RET",
+      "weight": 0.009
+    },
+    {
+      "source": "LBP",
+      "target": "LTB4R",
+      "weight": 0.009
+    },
+    {
+      "source": "TNFRSF10A",
+      "target": "CASP8",
+      "weight": 0.009
+    },
+    {
+      "source": "NRXN2",
+      "target": "IGSF21",
+      "weight": 0.009
+    },
+    {
+      "source": "CCL8",
+      "target": "CCR5",
+      "weight": 0.009
+    },
+    {
+      "source": "CD79A",
+      "target": "INPP5D",
+      "weight": 0.009
+    },
+    {
+      "source": "WNT5A",
+      "target": "ROR2",
+      "weight": 0.009
+    },
+    {
+      "source": "ROR2",
+      "target": "WNT5A",
+      "weight": 0.009
+    },
+    {
+      "source": "LAMA3",
+      "target": "ITGA10",
+      "weight": 0.009
+    },
+    {
+      "source": "CXCL10",
+      "target": "CCR5",
+      "weight": 0.008
+    },
+    {
+      "source": "PTPN6",
+      "target": "IL21R",
+      "weight": 0.008
+    },
+    {
+      "source": "CLCF1",
+      "target": "CNTFR",
+      "weight": 0.008
+    },
+    {
+      "source": "CD86",
+      "target": "CD3E",
+      "weight": 0.008
+    },
+    {
+      "source": "CXCL10",
+      "target": "MAP2K6",
+      "weight": 0.008
+    },
+    {
+      "source": "CCL5",
+      "target": "ACKR2",
+      "weight": 0.008
+    },
+    {
+      "source": "CXCL8",
+      "target": "CCR5",
+      "weight": 0.008
+    },
+    {
+      "source": "CXCL8",
+      "target": "ADRA2A",
+      "weight": 0.008
+    },
+    {
+      "source": "IL12RB1",
+      "target": "CCR5",
+      "weight": 0.008
+    },
+    {
+      "source": "CD86",
+      "target": "ZAP70",
+      "weight": 0.008
+    },
+    {
+      "source": "CD24",
+      "target": "SELP",
+      "weight": 0.007
+    },
+    {
+      "source": "SYK",
+      "target": "MS4A2",
+      "weight": 0.007
+    },
+    {
+      "source": "IL12RB1",
+      "target": "GZMB",
+      "weight": 0.007
+    },
+    {
+      "source": "CXCL9",
+      "target": "ADRA2A",
+      "weight": 0.007
+    },
+    {
+      "source": "INHBA",
+      "target": "ACVR1C",
+      "weight": 0.007
+    },
+    {
+      "source": "HFE",
+      "target": "TF",
+      "weight": 0.007
+    },
+    {
+      "source": "CCL3",
+      "target": "ACKR2",
+      "weight": 0.007
+    },
+    {
+      "source": "EFNB3",
+      "target": "EPHB6",
+      "weight": 0.007
+    },
+    {
+      "source": "EPHB6",
+      "target": "EFNB3",
+      "weight": 0.007
+    },
+    {
+      "source": "CXCL3",
+      "target": "ADRA2A",
+      "weight": 0.007
+    },
+    {
+      "source": "RELN",
+      "target": "ITGB7",
+      "weight": 0.007
+    },
+    {
+      "source": "CCL26",
+      "target": "CX3CR1",
+      "weight": 0.007
+    },
+    {
+      "source": "CCL26",
+      "target": "CCR5",
+      "weight": 0.006
+    },
+    {
+      "source": "LAMA3",
+      "target": "ITGA8",
+      "weight": 0.006
+    },
+    {
+      "source": "RELN",
+      "target": "ITGA10",
+      "weight": 0.006
+    },
+    {
+      "source": "IL1RAPL1",
+      "target": "PTPRF",
+      "weight": 0.006
+    },
+    {
+      "source": "CXCL3",
+      "target": "CCR5",
+      "weight": 0.006
+    },
+    {
+      "source": "CXCL9",
+      "target": "CX3CR1",
+      "weight": 0.005
+    },
+    {
+      "source": "PTPRF",
+      "target": "SIRPB1",
+      "weight": 0.005
+    },
+    {
+      "source": "CXCL9",
+      "target": "CCR5",
+      "weight": 0.005
+    },
+    {
+      "source": "CD86",
+      "target": "NOD2",
+      "weight": 0.005
+    },
+    {
+      "source": "SFRP2",
+      "target": "WNT5A",
+      "weight": 0.005
+    },
+    {
+      "source": "DUOX1",
+      "target": "ZAP70",
+      "weight": 0.005
+    },
+    {
+      "source": "LAMA3",
+      "target": "ITGB7",
+      "weight": 0.005
+    },
+    {
+      "source": "CXCL9",
+      "target": "MAP2K6",
+      "weight": 0.005
+    },
+    {
+      "source": "HAPLN1",
+      "target": "AGER",
+      "weight": 0.004
+    },
+    {
+      "source": "CCL8",
+      "target": "ACKR2",
+      "weight": 0.004
+    },
+    {
+      "source": "CDKN2A",
+      "target": "PLK1",
+      "weight": 0.004
+    },
+    {
+      "source": "CD86",
+      "target": "CD3G",
+      "weight": 0.004
+    },
+    {
+      "source": "CXCL8",
+      "target": "CD79A",
+      "weight": 0.003
+    },
+    {
+      "source": "IL12RB1",
+      "target": "CXCL9",
+      "weight": 0.003
+    },
+    {
+      "source": "CCL26",
+      "target": "ACKR2",
+      "weight": 0.003
+    },
+    {
+      "source": "WNT3",
+      "target": "ROR2",
+      "weight": 0.003
+    }
+  ]
+}

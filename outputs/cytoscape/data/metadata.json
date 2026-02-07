@@ -1,0 +1,37 @@
+{
+  "integrated": {
+    "name": "Integrated Network",
+    "cells": 42654,
+    "description": "Combined L-R interactions across all cardiac regions"
+  },
+  "AX": {
+    "name": "Apex",
+    "cells": 6497,
+    "description": "Cardiac apex - tip of the heart"
+  },
+  "LA": {
+    "name": "Left Atrium",
+    "cells": 5822,
+    "description": "Upper left chamber receiving oxygenated blood"
+  },
+  "LV": {
+    "name": "Left Ventricle",
+    "cells": 9626,
+    "description": "Main pumping chamber to systemic circulation"
+  },
+  "RA": {
+    "name": "Right Atrium",
+    "cells": 7027,
+    "description": "Upper right chamber receiving deoxygenated blood"
+  },
+  "RV": {
+    "name": "Right Ventricle",
+    "cells": 5039,
+    "description": "Pumping chamber to pulmonary circulation"
+  },
+  "SP": {
+    "name": "Septum",
+    "cells": 8643,
+    "description": "Muscular wall separating left and right chambers"
+  }
+}
