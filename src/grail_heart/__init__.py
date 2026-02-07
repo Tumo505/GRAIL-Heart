@@ -19,15 +19,34 @@ Example:
 __version__ = "1.0.0"
 __author__ = "GRAIL-Heart Team"
 
-from . import data
-from . import models
-from . import training
-from . import evaluation
-from . import utils
-
-# Convenient imports
-from .models import GRAILHeart
-from .inference import GRAILHeartPredictor, load_pretrained
+# Lazy imports to avoid circular dependencies
+# Submodules are loaded on first access
+def __getattr__(name):
+    if name == "data":
+        from . import data
+        return data
+    if name == "models":
+        from . import models
+        return models
+    if name == "training":
+        from . import training
+        return training
+    if name == "evaluation":
+        from . import evaluation
+        return evaluation
+    if name == "utils":
+        from . import utils
+        return utils
+    if name == "GRAILHeart":
+        from .models import GRAILHeart
+        return GRAILHeart
+    if name == "GRAILHeartPredictor":
+        from .inference import GRAILHeartPredictor
+        return GRAILHeartPredictor
+    if name == "load_pretrained":
+        from .inference import load_pretrained
+        return load_pretrained
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "GRAILHeart",
