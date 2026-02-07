@@ -1,0 +1,13 @@
+[server]
+maxUploadSize = 100000    # Max upload size in MB (effectively unlimited)
+maxMessageSize = 100000   # Max message size in MB (must match or exceed maxUploadSize)
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#e94560"
+backgroundColor = "#0f0f23"
+secondaryBackgroundColor = "#1a1a2e"
+textColor = "#ffffff"
