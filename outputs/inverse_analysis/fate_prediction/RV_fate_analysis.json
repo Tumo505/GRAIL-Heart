@@ -1,9 +1,9 @@
 {
   "n_cells": 5039,
   "trajectory_dim": 64,
-  "mean_differentiation": 0.5220535397529602,
-  "std_differentiation": 0.0005186363123357296,
-  "n_progenitors": 0,
-  "n_intermediate": 5039,
+  "mean_differentiation": 0.4750451445579529,
+  "std_differentiation": 0.05751514807343483,
+  "n_progenitors": 133,
+  "n_intermediate": 4906,
   "n_differentiated": 0
 }
