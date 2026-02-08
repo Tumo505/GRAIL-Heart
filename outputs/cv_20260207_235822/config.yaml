@@ -1,0 +1,81 @@
+checkpoint:
+  save_best: true
+  save_interval: 10
+  save_last: true
+data:
+  batch_size: 1
+  graph_method: knn
+  include_hallmark: true
+  k_neighbors: 6
+  log_transform: true
+  max_files: null
+  max_lr_pairs: 5000
+  min_cells: 3
+  min_genes: 200
+  msigdb_path: data/h.all.v2026.1.Hs.txt
+  n_top_genes: 2000
+  normalize: true
+  num_workers: 0
+early_stopping:
+  mode: min
+  monitor: val_total_loss
+  patience: 15
+hardware:
+  device: cuda
+  num_workers: 0
+  seed: 42
+logging:
+  log_interval: 10
+  use_tensorboard: true
+  use_wandb: false
+  wandb_entity: null
+  wandb_project: grail-heart-cv
+loss:
+  causal_weight: 0.3
+  cell_type_weight: 1.0
+  contrastive_weight: 0.5
+  cycle_weight: 0.3
+  differentiation_weight: 0.5
+  fate_weight: 0.5
+  gene_target_weight: 0.3
+  kl_weight: 0.001
+  lr_weight: 1.0
+  pathway_grounding_weight: 0.1
+  recon_loss_type: combined
+  recon_weight: 1.0
+  signaling_weight: 0.1
+  use_contrastive: true
+  use_inverse_losses: true
+model:
+  decoder_type: residual
+  dropout: 0.1
+  encoder_dims:
+  - 512
+  - 256
+  hidden_dim: 256
+  n_edge_types: 2
+  n_fates: null
+  n_gat_layers: 3
+  n_heads: 8
+  n_mechano_pathways: 8
+  n_pathways: 20
+  tasks:
+  - lr
+  - reconstruction
+  - cell_type
+  use_inverse_modelling: true
+  use_spatial: true
+  use_variational: false
+paths:
+  data_dir: data
+  output_dir: outputs
+training:
+  grad_accum_steps: 1
+  grad_clip: 1.0
+  learning_rate: 0.0001
+  mixed_precision: true
+  n_epochs: 100
+  optimizer: adamw
+  scheduler: cosine
+  warmup_epochs: 5
+  weight_decay: 0.01

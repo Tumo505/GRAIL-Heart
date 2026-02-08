@@ -1,0 +1,106 @@
+======================================================================
+GRAIL-Heart External Validation Report
+Generated: 2026-02-08 13:25:19
+======================================================================
+
+Dataset Summary:
+----------------------------------------------------------------------
+Dataset                Cells   Genes    L-R Species  Condition   
+----------------------------------------------------------------------
+kuppe_control_1        2,934   2,000    930 human    control     
+kuppe_control_2        2,049   2,000    478 human    control     
+kuppe_mi_ischemic      3,089   2,000   1056 human    myocardial_infarction
+kuppe_mi_fibrotic      3,185   2,000    760 human    myocardial_infarction
+kuppe_mi_remote        2,020   2,000    789 human    myocardial_infarction
+kawasaki_lcwe          1,195   2,000   1600 mouse    disease     
+kawasaki_pbs           2,030   2,000   1117 mouse    control     
+hca_AX                 6,497   2,000    571 human    healthy     
+
+Cell Fate Scores:
+----------------------------------------------------------------------
+  kuppe_control_1: 0.4315 +/- 0.0772 (range 0.2375-0.6209)
+  kuppe_control_2: 0.4271 +/- 0.0488 (range 0.2962-0.5649)
+  kuppe_mi_ischemic: 0.4308 +/- 0.0942 (range 0.2420-0.6243)
+  kuppe_mi_fibrotic: 0.4381 +/- 0.1201 (range 0.2497-0.6637)
+  kuppe_mi_remote: 0.4331 +/- 0.0628 (range 0.2762-0.6205)
+  kawasaki_lcwe: 0.4178 +/- 0.0963 (range 0.2502-0.6148)
+  kawasaki_pbs: 0.4332 +/- 0.0939 (range 0.2641-0.6251)
+  hca_AX: 0.4304 +/- 0.1217 (range 0.2346-0.6593)
+
+Mechanosensitive Pathway Enrichment (Bonferroni p < 0.05):
+----------------------------------------------------------------------
+  kuppe_control_1: TGF_BETA
+  kuppe_control_2: TGF_BETA
+  kuppe_mi_ischemic: YAP_TAZ, TGF_BETA
+  kuppe_mi_fibrotic: TGF_BETA
+  kuppe_mi_remote: TGF_BETA
+  kawasaki_lcwe: TGF_BETA
+  kawasaki_pbs: TGF_BETA
+  hca_AX: TGF_BETA, INTEGRIN_FAK
+
+MI Zone Comparison (Kuppe et al., Nature 2022):
+----------------------------------------------------------------------
+  ischemic                  fate=0.4308  
+  fibrotic                  fate=0.4381  
+  remote                    fate=0.4331  
+  control (kuppe_control_1) fate=0.4315  
+  control (kuppe_control_2) fate=0.4271  
+
+Top 5 Causal L-R Interactions Per Dataset:
+----------------------------------------------------------------------
+
+  kuppe_control_1 (control/control):
+          MYL9 -> ACTB       score=0.980  pathway=ligand
+          CFL1 -> ACTB       score=0.893  pathway=ecm
+          CTSB -> CD74       score=0.818  pathway=ecm_regulator
+         SPARC -> ENG        score=0.787  pathway=ligand
+           GSN -> FN1        score=0.786  pathway=ecm
+
+  kuppe_control_2 (control/control):
+          MYL9 -> ACTB       score=0.906  pathway=ligand
+          CTSB -> CD74       score=0.834  pathway=ecm_regulator
+           CFD -> C3         score=0.686  pathway=secreted_enzyme
+           GSN -> FN1        score=0.665  pathway=ecm
+           VWF -> COL1A2     score=0.652  pathway=ecm
+
+  kuppe_mi_ischemic (myocardial_infarction/ischemic):
+          CTSB -> CD74       score=0.986  pathway=ecm_regulator
+          VCAN -> FN1        score=0.971  pathway=ecm
+          CD74 -> LGMN       score=0.959  pathway=cell_adhesion
+          CCN2 -> FN1        score=0.956  pathway=ligand
+         THBS2 -> CD36       score=0.952  pathway=ecm
+
+  kuppe_mi_fibrotic (myocardial_infarction/fibrotic):
+          MYL9 -> ACTB       score=0.921  pathway=ligand
+           GSN -> COL1A1     score=0.909  pathway=ecm
+           GSN -> FN1        score=0.902  pathway=ecm
+        LGALS1 -> COL1A2     score=0.893  pathway=ecm
+          CCN2 -> FN1        score=0.852  pathway=ligand
+
+  kuppe_mi_remote (myocardial_infarction/remote):
+          MYL9 -> ACTB       score=0.891  pathway=ligand
+          CTSB -> CD74       score=0.862  pathway=ecm_regulator
+          MMP2 -> DCN        score=0.807  pathway=ecm
+           CFD -> C3         score=0.794  pathway=secreted_enzyme
+           GSN -> FN1        score=0.786  pathway=ecm
+
+  kawasaki_lcwe (disease):
+        LGALS1 -> COL1A2     score=0.993  pathway=ecm
+           GSN -> COL1A1     score=0.988  pathway=ecm
+          CFL1 -> ACTB       score=0.962  pathway=ecm
+          APOE -> LRP1       score=0.960  pathway=ligand
+           DCN -> LRP1       score=0.959  pathway=ligand
+
+  kawasaki_pbs (control):
+           TTN -> MYBPC3     score=0.988  pathway=ecm
+           GSN -> COL1A1     score=0.848  pathway=ecm
+           LPL -> LRP1       score=0.846  pathway=ecm
+          APOE -> LRP1       score=0.846  pathway=ligand
+           DCN -> LRP1       score=0.844  pathway=ligand
+
+  hca_AX (healthy):
+           B2M -> CALR       score=0.757  pathway=ecm
+          CALR -> LPL        score=0.718  pathway=ecm
+           VWF -> ITGA7      score=0.700  pathway=ecm
+           GSN -> FN1        score=0.678  pathway=ecm
+         ITGA7 -> CD151      score=0.676  pathway=cell_adhesion

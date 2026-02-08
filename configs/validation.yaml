@@ -1,0 +1,160 @@
+# Validation and Generalisability Configuration
+# External datasets for GRAIL-Heart model validation
+
+model:
+  checkpoint: outputs/checkpoints/best.pt
+  use_inverse: true
+
+output_dir: outputs/validation
+
+# ────────────────────────────────────────────────────
+# External datasets (ordered by suitability)
+# ────────────────────────────────────────────────────
+datasets:
+  # ── Kuppe et al. (Nature 2022) — Human MI ────────
+  # Spatial Visium from myocardial infarction patients
+  # This is the primary external validation dataset
+  kuppe_control_1:
+    name: "Kuppe Control (P7)"
+    path: data/Kuppe-et-al/d6cb8329-2852-47b7-bbef-442e94ad704c/spatial_ACH003_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: human
+    tissue: heart
+    condition: control
+    zone: control
+    patient: P7
+    reference: "Kuppe et al., Nature 2022"
+    notes: "Healthy donor heart; Visium spatial transcriptomics"
+
+  kuppe_control_2:
+    name: "Kuppe Control (P17)"
+    path: data/Kuppe-et-al/49165169-6ba7-434a-ab66-b9ee6d3d9d70/spatial_ACH002_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: human
+    tissue: heart
+    condition: control
+    zone: control
+    patient: P17
+    reference: "Kuppe et al., Nature 2022"
+    notes: "Healthy donor heart; Visium spatial transcriptomics"
+
+  kuppe_mi_ischemic:
+    name: "Kuppe MI — Ischemic Zone (P15)"
+    path: data/Kuppe-et-al/4727128f-c31e-42e0-9c2c-9fcc25b1d483/spatial_ACH0015_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: human
+    tissue: heart
+    condition: myocardial_infarction
+    zone: ischemic
+    patient: P15
+    reference: "Kuppe et al., Nature 2022"
+    notes: "Ischemic zone — acute injury, direct tissue damage"
+
+  kuppe_mi_fibrotic:
+    name: "Kuppe MI — Fibrotic Zone (P14)"
+    path: data/Kuppe-et-al/bb9f16db-9faf-46d0-aa80-009a44365e8b/spatial_ACH005_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: human
+    tissue: heart
+    condition: myocardial_infarction
+    zone: fibrotic
+    patient: P14
+    reference: "Kuppe et al., Nature 2022"
+    notes: "Fibrotic zone — TGF-β-driven fibrotic remodelling expected"
+
+  kuppe_mi_remote:
+    name: "Kuppe MI — Remote Zone (P11)"
+    path: data/Kuppe-et-al/34d2ae40-cebb-406b-bfd2-9e544706c41d/spatial_ACH0019_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: human
+    tissue: heart
+    condition: myocardial_infarction
+    zone: remote
+    patient: P11
+    reference: "Kuppe et al., Nature 2022"
+    notes: "Remote zone — structurally unaffected, negative control within MI hearts"
+
+  # ── Visium spatial (directly compatible) ──────────
+  kawasaki_lcwe:
+    name: "Kawasaki Disease Model (LCWE)"
+    path: data/GSE178799/GSM5397926_LCWE_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: mouse
+    tissue: heart
+    condition: disease
+    geo: GSE178799
+    reference: "Li et al., 2022"
+    notes: "LCWE-induced Kawasaki vasculitis model; Visium spatial"
+
+  kawasaki_pbs:
+    name: "Kawasaki Control (PBS)"
+    path: data/GSE178799/GSM5397927_PBS_filtered_feature_bc_matrix.h5
+    format: h5_10x
+    species: mouse
+    tissue: heart
+    condition: control
+    geo: GSE178799
+    reference: "Li et al., 2022"
+    notes: "PBS control for Kawasaki model; Visium spatial"
+
+  # ── HeartCellAtlas v2 holdout (internal control) ──
+  hca_AX:
+    name: "Heart Cell Atlas v2 — Apex (internal)"
+    path: data/HeartCellAtlasv2/visium-OCT_AX_raw.h5ad
+    format: h5ad
+    species: human
+    tissue: heart
+    condition: healthy
+    reference: "Litviňuková et al., 2020"
+    notes: "Internal positive control — should reproduce training results"
+
+# ────────────────────────────────────────────────────
+# Validation analyses
+# ────────────────────────────────────────────────────
+analyses:
+  lr_consistency:
+    enabled: true
+    top_k: 50          # Compare top-k L-R pairs
+    min_overlap: 0.3   # Minimum Jaccard overlap to report
+
+  pathway_enrichment:
+    enabled: true
+    pathways:
+      - YAP_TAZ
+      - BMP
+      - TGF_BETA
+      - NOTCH
+      - INTEGRIN_FAK
+      - PIEZO
+      - WNT
+      - FGF
+    significance: 0.05  # After Bonferroni
+
+  disease_comparison:
+    enabled: true
+    pairs:
+      - [kawasaki_lcwe, kawasaki_pbs]             # Kawasaki disease vs PBS
+      - [kuppe_mi_ischemic, kuppe_control_1]      # MI ischemic vs healthy
+      - [kuppe_mi_fibrotic, kuppe_control_1]      # MI fibrotic vs healthy
+      - [kuppe_mi_remote, kuppe_control_1]        # MI remote vs healthy (neg ctrl)
+
+  mi_zone_comparison:
+    enabled: true
+    zones:
+      ischemic: kuppe_mi_ischemic
+      fibrotic: kuppe_mi_fibrotic
+      remote: kuppe_mi_remote
+    controls:
+      - kuppe_control_1
+      - kuppe_control_2
+
+# ────────────────────────────────────────────────────
+# Preprocessing
+# ────────────────────────────────────────────────────
+preprocessing:
+  n_top_genes: 2000
+  min_cells: 3
+  min_genes: 200
+  k_neighbors: 15    # kNN graph
+  normalize: true
+  log_transform: true
