@@ -68,3 +68,9 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+
+# HF Spaces deployment assets (large files live on HF, not GitHub)
+huggingface/model/
+huggingface/demo_data/
+huggingface/src/
+huggingface/__pycache__/
