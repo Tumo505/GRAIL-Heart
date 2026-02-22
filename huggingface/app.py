@@ -966,6 +966,8 @@ Upload spatial transcriptomics data in any of these formats:
         if st.button("🫀 Load Demo Data (LV, 500 cells)", type="primary"):
             with st.spinner("Loading demo dataset …"):
                 adata = sc.read_h5ad(str(DEMO_H5AD))
+                # Ensure we have HGNC symbols as var_names
+                adata = _resolve_gene_symbols(adata)
                 # Demo is already preprocessed; store directly
                 adata.uns["k_neighbors"] = 6
                 st.session_state.adata = adata

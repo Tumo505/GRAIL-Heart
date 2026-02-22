@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/wh
         torch>=2.0.0 && \
     pip install --no-cache-dir -r requirements.txt
 
+# Streamlit config (upload limit, etc.)
+RUN mkdir -p .streamlit
+RUN printf '[server]\nmaxUploadSize = 10240\nmaxMessageSize = 10240\n' > .streamlit/config.toml
+
 # Copy application code and assets
 COPY app.py .
 COPY model/ model/

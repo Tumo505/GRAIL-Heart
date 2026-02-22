@@ -109,6 +109,25 @@ def create_demo_adata():
     if adata is not None:
         import scipy.sparse as sp
 
+        # Convert Ensembl IDs → HGNC symbols if a SYMBOL column exists
+        sample = list(adata.var_names[:200])
+        ens_frac = sum(1 for g in sample if str(g).startswith("ENS")) / max(len(sample), 1)
+        if ens_frac > 0.5:
+            for col in ["SYMBOL", "gene_symbol", "gene_symbols", "gene_name",
+                        "gene_short_name", "symbol", "name", "feature_name"]:
+                if col in adata.var.columns:
+                    symbols = adata.var[col].astype(str).values
+                    valid = np.array([
+                        s != "" and s != "nan" and s != "None" and not s.startswith("ENS")
+                        for s in symbols
+                    ])
+                    if valid.sum() >= 500:
+                        adata = adata[:, valid].copy()
+                        adata.var_names = adata.var[col].values.astype(str)
+                        adata.var_names_make_unique()
+                        print(f"  Converted var_names to HGNC via '{col}' column")
+                    break
+
         # Subsample
         np.random.seed(42)
         idx = np.random.choice(adata.n_obs, min(N_CELLS, adata.n_obs), replace=False)
