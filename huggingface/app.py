@@ -793,7 +793,7 @@ with tab_atlas:
     if cross_df is not None:
         st.markdown("### Cross-Region Comparison")
         fig = make_cross_region_heatmap(cross_df, n=25)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="atlas_cross_heatmap")
 
         with st.expander("Top 30 L-R interactions across all regions", expanded=False):
             st.dataframe(cross_df.nlargest(30, "mean_score"), use_container_width=True)
@@ -828,7 +828,7 @@ with tab_atlas:
             fig = make_lr_bar_chart(
                 region_df, "mean_score", f"{sel_region} — Top by Expression", n=15
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="atlas_expr_bar")
         with col_b:
             if has_causal_col:
                 causal_df = region_df[region_df["causal_score"] > 0].copy()
@@ -837,7 +837,7 @@ with tab_atlas:
                         causal_df, "causal_score",
                         f"{sel_region} — Top by Causal Score", n=15,
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key="atlas_causal_bar")
 
         score_col = (
             "causal_score"
@@ -845,11 +845,11 @@ with tab_atlas:
             else "mean_score"
         )
         fig = make_network_graph(region_df, score_col, n=35)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="atlas_network")
 
         pw_fig = make_pathway_chart(region_df, score_col)
         if pw_fig:
-            st.plotly_chart(pw_fig, use_container_width=True)
+            st.plotly_chart(pw_fig, use_container_width=True, key="atlas_pathway")
 
         csv = region_df.to_csv(index=False)
         st.download_button(
@@ -927,7 +927,7 @@ Upload spatial transcriptomics data in any of these formats:
                         names=ct_counts.index,
                         title="Cell Types",
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key="upload_celltype_pie")
 
             st.markdown("### Preprocessing")
             col1, col2 = st.columns(2)
@@ -1020,10 +1020,10 @@ OmniPath database (22,234 curated L-R pairs). This tells you
                     expr_scores, "mean_score",
                     "Top L-R Interactions (Expression)", 20,
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="fwd_expr_bar")
 
                 fig2 = make_network_graph(expr_scores, "mean_score", 30)
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, use_container_width=True, key="fwd_network")
 
 
 # ── TAB 4: Inverse / Causal ───────────────────────────────────────
@@ -1108,10 +1108,10 @@ This runs the full GRAIL-Heart GNN pipeline:
                             combined, "causal_score",
                             "Top Causal L-R Interactions", 15,
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True, key="inv_causal_bar")
                     with c2:
                         fig = make_network_graph(combined, "causal_score", 30)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True, key="inv_network")
 
                     if "pathway_activation" in model_out:
                         st.markdown("### Pathway Activation (mean across cells)")
@@ -1125,7 +1125,7 @@ This runs the full GRAIL-Heart GNN pipeline:
                         fig.update_layout(
                             yaxis=dict(categoryorder="total ascending")
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True, key="inv_pathway_act")
 
                 except Exception as e:
                     st.error(f"Inference error: {e}")
@@ -1180,14 +1180,14 @@ with tab_results:
         col_a, col_b = st.columns(2)
         with col_a:
             fig = make_lr_bar_chart(df, score_col, f"Top 20 by {score_col}", 20)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="results_bar")
         with col_b:
             pw_fig = make_pathway_chart(df, score_col)
             if pw_fig:
-                st.plotly_chart(pw_fig, use_container_width=True)
+                st.plotly_chart(pw_fig, use_container_width=True, key="results_pathway")
 
         fig = make_network_graph(df, score_col, 40)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="results_network")
 
         st.markdown("### Download")
         c1, c2 = st.columns(2)
