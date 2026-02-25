@@ -47,6 +47,7 @@ CHECKPOINT_PATH = APP_DIR / "model" / "best.pt"
 PRECOMPUTED_DIR = APP_DIR / "demo_data" / "tables"
 DEMO_H5AD = APP_DIR / "demo_data" / "demo_lv_500cells.h5ad"
 LR_CACHE = APP_DIR / "demo_data" / "lr_database_cache.csv"
+TRAINING_GENES = APP_DIR / "demo_data" / "training_genes.txt"
 
 REGIONS = ["AX", "LA", "LV", "RA", "RV", "SP"]
 REGION_NAMES = {
@@ -373,10 +374,34 @@ def run_model_inference(
 
     device = next(model.parameters()).device
 
-    X = adata.X
-    if hasattr(X, "toarray"):
-        X = X.toarray()
-    x = torch.tensor(np.array(X, dtype=np.float32), device=device)
+    # ── Match uploaded genes to the 2000 training genes by name ─────
+    training_genes = _load_training_genes()
+    upload_genes = list(adata.var_names)
+    upload_gene_set = set(upload_genes)
+    upload_gene_idx = {g: i for i, g in enumerate(upload_genes)}
+
+    X_raw = adata.X
+    if hasattr(X_raw, "toarray"):
+        X_raw = X_raw.toarray()
+    X_raw = np.array(X_raw, dtype=np.float32)
+
+    # Build a (n_cells × 2000) matrix with genes in training order
+    n_cells = X_raw.shape[0]
+    X = np.zeros((n_cells, len(training_genes)), dtype=np.float32)
+    matched = 0
+    for i, gene in enumerate(training_genes):
+        if gene in upload_gene_idx:
+            X[:, i] = X_raw[:, upload_gene_idx[gene]]
+            matched += 1
+
+    gene_overlap_pct = matched / len(training_genes) * 100
+    st.info(
+        f"Gene matching: {matched}/{len(training_genes)} training genes found "
+        f"in your data ({gene_overlap_pct:.0f}% overlap). "
+        f"{'Good coverage!' if gene_overlap_pct > 60 else 'Low overlap — results may be less reliable.'}"
+    )
+
+    x = torch.tensor(X, device=device)
 
     coords = _get_spatial_coords(adata)
     cmin, cmax = coords.min(0), coords.max(0)
@@ -429,6 +454,17 @@ def run_model_inference(
         )
 
     return results
+
+
+def _load_training_genes() -> List[str]:
+    """Load the ordered list of 2000 genes the model was trained on."""
+    if TRAINING_GENES.exists():
+        return TRAINING_GENES.read_text().strip().split("\n")
+    # Fallback: read from demo h5ad
+    if DEMO_H5AD.exists():
+        demo = sc.read_h5ad(str(DEMO_H5AD))
+        return list(demo.var_names)
+    return []
 
 
 def _get_spatial_coords(adata: ad.AnnData) -> np.ndarray:
@@ -930,6 +966,11 @@ Upload spatial transcriptomics data in any of these formats:
                     st.plotly_chart(fig, use_container_width=True, key="upload_celltype_pie")
 
             st.markdown("### Preprocessing")
+            st.caption(
+                "The model matches genes by name to its 2000 training genes. "
+                "You can select more HVGs — extra genes will be used for forward scoring, "
+                "while inverse inference automatically maps to the training gene set."
+            )
             col1, col2 = st.columns(2)
             with col1:
                 n_hvg = st.slider(
