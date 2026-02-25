@@ -394,12 +394,38 @@ def run_model_inference(
             X[:, i] = X_raw[:, upload_gene_idx[gene]]
             matched += 1
 
-    gene_overlap_pct = matched / len(training_genes) * 100
-    st.info(
-        f"Gene matching: {matched}/{len(training_genes)} training genes found "
-        f"in your data ({gene_overlap_pct:.0f}% overlap). "
-        f"{'Good coverage!' if gene_overlap_pct > 60 else 'Low overlap — results may be less reliable.'}"
-    )
+    gene_overlap_pct = matched / max(len(training_genes), 1) * 100
+
+    if matched == 0:
+        raise ValueError(
+            "None of the 2,000 training genes were found in your dataset. "
+            "This usually means the gene names are in a different format "
+            "(e.g. Ensembl IDs like ENSG… instead of HGNC symbols like MMP2, VEGFA). "
+            "Please ensure your data uses standard HGNC gene symbols."
+        )
+    elif gene_overlap_pct < 10:
+        raise ValueError(
+            f"Only {matched} of 2,000 training genes found ({gene_overlap_pct:.0f}% overlap). "
+            f"The inverse model cannot produce reliable results with so few genes. "
+            f"Please check that gene names are standard HGNC symbols. "
+            f"You can still use the Forward Model tab — it doesn't require gene matching."
+        )
+    elif gene_overlap_pct < 30:
+        st.warning(
+            f"⚠️ Gene matching: {matched}/{len(training_genes)} training genes found "
+            f"({gene_overlap_pct:.0f}% overlap). Results will be **unreliable**. "
+            f"Consider using the Forward Model instead."
+        )
+    elif gene_overlap_pct < 60:
+        st.warning(
+            f"Gene matching: {matched}/{len(training_genes)} training genes found "
+            f"({gene_overlap_pct:.0f}% overlap). Results may be less accurate."
+        )
+    else:
+        st.success(
+            f"Gene matching: {matched}/{len(training_genes)} training genes found "
+            f"({gene_overlap_pct:.0f}% overlap). Good coverage!"
+        )
 
     x = torch.tensor(X, device=device)
 
