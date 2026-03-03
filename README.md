@@ -13,6 +13,7 @@
   <a href="https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html">🕸️ Network Explorer</a> •
   <a href="#web-application">🖥️ Web App</a> •
   <a href="docs/METHODOLOGY.md">📖 Methods</a> •
+  <a href="https://tumo505-grail-heart.mintlify.app/introduction">📄 Documentation</a> •
   <a href="docs/RESULTS.md">📊 Results</a>
 </p>
 
