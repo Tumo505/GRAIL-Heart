@@ -778,6 +778,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### Resources")
+    st.markdown("📚 [Documentation](https://tumo505-grail-heart.mintlify.app/introduction)")
     st.markdown("📖 [GitHub](https://github.com/Tumo505/GRAIL-Heart)")
     st.markdown(
         "🕸️ [Network Explorer](https://tumo505.github.io/GRAIL-Heart/outputs/cytoscape/index.html)"
