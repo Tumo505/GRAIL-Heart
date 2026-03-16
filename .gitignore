@@ -72,5 +72,5 @@ htmlcov/
 # HF Spaces deployment assets (large files live on HF, not GitHub)
 huggingface/model/
 huggingface/demo_data/
-huggingface/src/
+# huggingface/src/ is tracked so the grail_heart package deploys with the Space
 huggingface/__pycache__/
